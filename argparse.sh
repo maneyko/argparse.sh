@@ -79,25 +79,46 @@ arg_help() {
   parse_args $arg_name $arg_flag "true"
 }
 
+remove_leading_whitespace() {
+  eval "$(printf "$1=\"\${$1#\"\${$1%%%%[![:space:]]*}\"}\"")"
+}
+
 parse_args() {
   name_upper="$(echo $1 | tr '/a-z/' '/A-Z/' | tr '-' '_')"
 
   if test "$2" = "positional"; then
+    remove_leading_whitespace 'ARGS_STR'
     arg_val="${ARGS_STR%%[ ]*}"
     ARGS_STR="${ARGS_STR#*[ ]}"
     eval "$(printf "ARG_%s=%s" "$name_upper" "$arg_val")"
 
-  elif [[ $ARGS_STR =~ "--$1" || $ARGS_STR =~ "-$2" ]]; then
-    if test -n "$3"; then
+  elif [[ " $ARGS_STR " =~ " --$1 " || " $ARGS_STR" =~ " -$2" ]]; then
+
+    if test -n "$3"; then  # Is boolean
       eval "$(printf "ARG_%s=$3" "$name_upper")"
-      ARGS_STR="$(echo " $ARGS_STR" | \
-        perl -pe "s/ -$2//; s/ --$1//; s/^ //")"
-    else
-      arg_val="$(echo "$ARGS_STR" \
-        | perl -ne "( /--$1 ([\S]+)/ || /-$2[ ]?([\S]+)/ ) && print \$1")"
+      ARGS_STR=" $ARGS_STR "
+      eval "$(printf "ARGS_STR=\"\${ARGS_STR/--$1 }\"")"
+      eval "$(printf "ARGS_STR=\"\${ARGS_STR/-$2 }\"")"
+
+    else  # Has a value
+      ARGS_STR=" $ARGS_STR "
+      pat="--$1"
+      val_first="${ARGS_STR##* "$pat" } "
+      if test "$ARGS_STR " != "$val_first"; then
+        remove_leading_whitespace 'val_first'
+        arg_val="${val_first%%[ ]*}"
+      else
+        pat="-$2"
+        val_first="${ARGS_STR##* "$pat"} "
+        remove_leading_whitespace 'val_first'
+        arg_val="${val_first%%[ ]*}"
+      fi
       eval "$(printf "ARG_%s=%s" "$name_upper" "$arg_val")"
-      ARGS_STR="$(echo " $ARGS_STR" | \
-        perl -pe "s/ -$2[ ]?([\S]+)//; s/ --$1[ ]([\S]+)//; s/^ //")"
+      front="${ARGS_STR%% "$pat"*}"
+      back="${ARGS_STR##* "$pat"}"
+      remove_leading_whitespace 'back'
+      back="${back#*[ ]}"
+      ARGS_STR="$front $back"
     fi
   fi
 
@@ -132,15 +153,15 @@ print_help() {
   if test -n "${OPTIONAL_SINGLE_NAMES}" -o -n "${OPTIONAL_BOOLEAN_NAMES}"; then
     test -n "${POSITIONAL_NAMES}" && printf "\n"
     printf "optional arguments:\n"
+    i=0
+    for bool_name in "${OPTIONAL_BOOLEAN_NAMES[@]}"; do
+      printf "  %-25s ${OPTIONAL_BOOLEAN_DESCRIPTIONS[$i]}\n" "-${OPTIONAL_BOOLEAN_FLAGS[$i]}, --$bool_name"
+      i=$(($i + 1))
+    done
+    i=0
+    for opt_name in "${OPTIONAL_SINGLE_NAMES[@]}"; do
+      printf "  %-25s ${OPTIONAL_SINGLE_DESCRIPTIONS[$i]}\n" "-${OPTIONAL_SINGLE_FLAGS[$i]}, --$opt_name"
+      i=$(($i + 1))
+    done
   fi
-  i=0
-  for bool_name in "${OPTIONAL_BOOLEAN_NAMES[@]}"; do
-    printf "  %-25s ${OPTIONAL_BOOLEAN_DESCRIPTIONS[$i]}\n" "-${OPTIONAL_BOOLEAN_FLAGS[$i]}, --$bool_name"
-    i=$(($i + 1))
-  done
-  i=0
-  for opt_name in "${OPTIONAL_SINGLE_NAMES[@]}"; do
-    printf "  %-25s ${OPTIONAL_SINGLE_DESCRIPTIONS[$i]}\n" "-${OPTIONAL_SINGLE_FLAGS[$i]}, --$opt_name"
-    i=$(($i + 1))
-  done
 }

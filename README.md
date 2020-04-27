@@ -51,8 +51,10 @@ fi
 * The `arg_positional_single` functions should be ran last (but before `arg_help`) to ensure they are
   parsed anywhere in the argument string, just as it is done in [Usage](#usage).
 
+* Passing invalid arguments to the user script results in unexpected behavior from `argparse.sh`.
+
 * Optional arguments with a corresponding value may be passed without whitespace in between. So you
-  may do `./process_file.sh input-data.txt -tcsv`.
+  may do `./process_file.sh -tcsv input-data.txt`.
 
 ## Requirements
 
