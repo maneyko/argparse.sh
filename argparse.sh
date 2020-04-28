@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ARGS_STR="$@"
+ARGS_ARR=("$@")
 MAIN_FILE=$0
 
 POSITIONAL_NAMES=()
@@ -15,6 +15,10 @@ OPTIONAL_SINGLE_FLAGS=()
 OPTIONAL_SINGLE_DESCRIPTIONS=()
 
 HELP_DESCRIPTION=
+
+clr() {  # (number, text)
+  printf "\033[38;5;${1}m${2}\033[0m"
+}
 
 parse_arg1() {
   t1="${1%%\]*}"
@@ -74,7 +78,7 @@ arg_help() {
 }
 
 parse_args() {
-  parse_args2 $ARGS_STR
+  parse_args2 "${ARGS_ARR[@]}"
 }
 
 parse_args2() {
@@ -90,7 +94,7 @@ parse_args2() {
         -$opt_flag*|--$opt_name)
           name_upper="$(echo $opt_name | tr '/a-z/' '/A-Z/' | tr '-' '_')"
           if [[ $key =~ ^-$opt_flag ]]; then
-            if [[ $key == $opt_flag ]]; then
+            if [[ $key == -$opt_flag ]]; then
               val="$2"
               shift; shift
             else
@@ -124,6 +128,7 @@ parse_args2() {
       shift
     fi
   done
+  set -- "${POSITIONAL[@]}"
 
   i=0
   for name in "${POSITIONAL_NAMES[@]}"; do
@@ -135,12 +140,6 @@ parse_args2() {
   if test -n "$ARG_HELP"; then
     print_help
     exit 0
-  fi
-
-  if test "${#POSITIONAL[@]}" -ne "${#POSITIONAL_NAMES[@]}"; then
-    echo 'Missing a positional argument.'
-    echo "Needs positional arguments [${POSITIONAL_NAMES[@]}]."
-    exit 1
   fi
 }
 
@@ -163,7 +162,8 @@ print_help() {
     printf "positional arguments:\n"
     i=0
     for p_name in "${POSITIONAL_NAMES[@]}"; do
-      printf "  %-25s ${POSITIONAL_DESCRIPTIONS[$i]}\n" "$p_name"
+      p_disp="$(clr 3 "$p_name")"
+      printf "  %-37s ${POSITIONAL_DESCRIPTIONS[$i]}\n" "$p_disp"
       i=$(($i+1))
     done
   fi
@@ -172,12 +172,16 @@ print_help() {
     printf "optional arguments:\n"
     i=0
     for bool_name in "${OPTIONAL_BOOLEAN_NAMES[@]}"; do
-      printf "  %-25s ${OPTIONAL_BOOLEAN_DESCRIPTIONS[$i]}\n" "-${OPTIONAL_BOOLEAN_FLAGS[$i]}, --$bool_name"
+      flag_disp="$(clr 3 "-${OPTIONAL_BOOLEAN_FLAGS[$i]}")"
+      name_disp="$(clr 3 "--$bool_name")"
+      printf "  %-50s ${OPTIONAL_BOOLEAN_DESCRIPTIONS[$i]}\n" "$flag_disp, $name_disp"
       i=$(($i+1))
     done
     i=0
     for opt_name in "${OPTIONAL_SINGLE_NAMES[@]}"; do
-      printf "  %-25s ${OPTIONAL_SINGLE_DESCRIPTIONS[$i]}\n" "-${OPTIONAL_SINGLE_FLAGS[$i]}, --$opt_name"
+      flag_disp="$(clr 3 "-${OPTIONAL_SINGLE_FLAGS[$i]}")"
+      name_disp="$(clr 3 "--$opt_name")"
+      printf "  %-50s ${OPTIONAL_SINGLE_DESCRIPTIONS[$i]}\n" "$flag_disp, $name_disp"
       i=$(($i+1))
     done
   fi
