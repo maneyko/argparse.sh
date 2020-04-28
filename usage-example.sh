@@ -7,6 +7,7 @@ arg_optional_boolean  "[flag] [f] [My important flag]"
 arg_positional_single "[infile] [The file to parse]"
 arg_positional_single "[outfile] [The output file]"
 arg_help              "[This is the help message]"
+parse_args
 
 
 echo $ARG_PORT_NUMBER

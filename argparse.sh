@@ -39,7 +39,6 @@ arg_positional_single() {
   arg_desc="$parse_arg3_result"
   POSITIONAL_NAMES+=($arg_name)
   POSITIONAL_DESCRIPTIONS+=("$arg_desc")
-  parse_args $arg_name "positional"
 }
 
 arg_optional_single() {
@@ -52,7 +51,6 @@ arg_optional_single() {
   OPTIONAL_SINGLE_NAMES+=($arg_name)
   OPTIONAL_SINGLE_FLAGS+=($arg_flag)
   OPTIONAL_SINGLE_DESCRIPTIONS+=("$arg_desc")
-  parse_args $arg_name $arg_flag
 }
 
 arg_optional_boolean() {
@@ -65,7 +63,6 @@ arg_optional_boolean() {
   OPTIONAL_BOOLEAN_NAMES+=($arg_name)
   OPTIONAL_BOOLEAN_FLAGS+=($arg_flag)
   OPTIONAL_BOOLEAN_DESCRIPTIONS+=("$arg_desc")
-  parse_args $arg_name $arg_flag "true"
 }
 
 arg_help() {
@@ -76,7 +73,6 @@ arg_help() {
   OPTIONAL_BOOLEAN_NAMES+=($arg_name)
   OPTIONAL_BOOLEAN_FLAGS+=($arg_flag)
   OPTIONAL_BOOLEAN_DESCRIPTIONS+=("Print this help message.")
-  parse_args $arg_name $arg_flag "true"
 }
 
 remove_leading_whitespace() {
@@ -84,43 +80,53 @@ remove_leading_whitespace() {
 }
 
 parse_args() {
-  name_upper="$(echo $1 | tr '/a-z/' '/A-Z/' | tr '-' '_')"
+  parse_args2 $ARGS_STR
+}
 
-  if test "$2" = "positional"; then
-    remove_leading_whitespace 'ARGS_STR'
-    arg_val="${ARGS_STR%%[ ]*}"
-    ARGS_STR="${ARGS_STR#*[ ]}"
-    eval "$(printf "ARG_%s=%s" "$name_upper" "$arg_val")"
-
-  elif [[ " $ARGS_STR " =~ " --$1 " || " $ARGS_STR" =~ " -$2" ]]; then
-
-    if test -n "$3"; then  # Is boolean
-      eval "$(printf "ARG_%s=$3" "$name_upper")"
-      ARGS_STR=" $ARGS_STR "
-      eval "$(printf "ARGS_STR=\"\${ARGS_STR/--$1 }\"")"
-      eval "$(printf "ARGS_STR=\"\${ARGS_STR/-$2 }\"")"
-
-    else  # Has a value
-      ARGS_STR=" $ARGS_STR "
-      pat="--$1"
-      val_first="${ARGS_STR##* "$pat" } "
-      if test "$ARGS_STR " != "$val_first"; then
-        remove_leading_whitespace 'val_first'
-        arg_val="${val_first%%[ ]*}"
-      else
-        pat="-$2"
-        val_first="${ARGS_STR##* "$pat"} "
-        remove_leading_whitespace 'val_first'
-        arg_val="${val_first%%[ ]*}"
-      fi
-      eval "$(printf "ARG_%s=%s" "$name_upper" "$arg_val")"
-      front="${ARGS_STR%% "$pat"*}"
-      back="${ARGS_STR##* "$pat"}"
-      remove_leading_whitespace 'back'
-      back="${back#*[ ]}"
-      ARGS_STR="$front $back"
+parse_args2() {
+  POSITIONAL=()
+  while test $# -gt 0; do
+    key=$1
+    i=0
+    found=
+    for opt_name in "${OPTIONAL_SINGLE_NAMES[@]}"; do
+      opt_flag="${OPTIONAL_SINGLE_FLAGS[$i]}"
+      i=$(($i+1))
+      case $key in
+        -$opt_flag|--$opt_name)
+          name_upper="$(echo $opt_name | tr '/a-z/' '/A-Z/' | tr '-' '_')"
+          eval "$(printf "ARG_$name_upper=\"$2\"")"
+          found=1
+          shift
+          shift
+          ;;
+      esac
+    done
+    i=0
+    for opt_name in "${OPTIONAL_BOOLEAN_NAMES[@]}"; do
+      opt_flag="${OPTIONAL_BOOLEAN_FLAGS[$i]}"
+      i=$(($i+1))
+      case $key in
+        -$opt_flag|--$opt_bool)
+          name_upper="$(echo $opt_name | tr '/a-z/' '/A-Z/' | tr '-' '_')"
+          eval "$(printf "ARG_$name_upper=true")"
+          found=1
+          shift
+          ;;
+      esac
+    done
+    if test -z "$found"; then
+      POSITIONAL+=("$1")
+      shift
     fi
-  fi
+  done
+
+  i=0
+  for name in "${POSITIONAL_NAMES[@]}"; do
+    name_upper="$(echo $name | tr '/a-z/' '/A-Z/' | tr '-' '_')"
+    eval "$(printf "ARG_$name_upper=${POSITIONAL[$i]}")"
+    i=$(($i+1))
+  done
 
   if test -n "$ARG_HELP"; then
     print_help
