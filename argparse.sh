@@ -66,17 +66,11 @@ arg_optional_boolean() {
 }
 
 arg_help() {
-  arg_name="help"
-  arg_flag="h"
-  parse_arg3 "$1"
-  HELP_DESCRIPTION="$parse_arg3_result"
-  OPTIONAL_BOOLEAN_NAMES+=($arg_name)
-  OPTIONAL_BOOLEAN_FLAGS+=($arg_flag)
+  t1="${1#*\[}"
+  HELP_DESCRIPTION="${t1%\]*}"
+  OPTIONAL_BOOLEAN_NAMES+=("help")
+  OPTIONAL_BOOLEAN_FLAGS+=("h")
   OPTIONAL_BOOLEAN_DESCRIPTIONS+=("Print this help message.")
-}
-
-remove_leading_whitespace() {
-  eval "$(printf "$1=\"\${$1#\"\${$1%%%%[![:space:]]*}\"}\"")"
 }
 
 parse_args() {
@@ -87,18 +81,28 @@ parse_args2() {
   POSITIONAL=()
   while test $# -gt 0; do
     key=$1
-    i=0
     found=
+    i=0
     for opt_name in "${OPTIONAL_SINGLE_NAMES[@]}"; do
       opt_flag="${OPTIONAL_SINGLE_FLAGS[$i]}"
       i=$(($i+1))
       case $key in
-        -$opt_flag|--$opt_name)
+        -$opt_flag*|--$opt_name)
           name_upper="$(echo $opt_name | tr '/a-z/' '/A-Z/' | tr '-' '_')"
-          eval "$(printf "ARG_$name_upper=\"$2\"")"
+          if [[ $key =~ ^-$opt_flag ]]; then
+            if [[ $key == $opt_flag ]]; then
+              val="$2"
+              shift; shift
+            else
+              val="${key/-"$opt_flag"}"
+              shift
+            fi
+          else
+            val="$2"
+            shift; shift
+          fi
+          eval "$(printf "ARG_$name_upper=\"$val\"")"
           found=1
-          shift
-          shift
           ;;
       esac
     done
@@ -132,10 +136,15 @@ parse_args2() {
     print_help
     exit 0
   fi
+
+  if test "${#POSITIONAL[@]}" -ne "${#POSITIONAL_NAMES[@]}"; then
+    echo 'Missing a positional argument.'
+    echo "Needs positional arguments [${POSITIONAL_NAMES[@]}]."
+    exit 1
+  fi
 }
 
 print_help() {
-  FILENAME=
   printf "usage:  `basename $MAIN_FILE` "
   for p_name in "${POSITIONAL_NAMES[@]}"; do
     printf "[$p_name] "
@@ -143,9 +152,11 @@ print_help() {
   for bool_flag in "${OPTIONAL_BOOLEAN_FLAGS[@]}"; do
     printf "[-$bool_flag] "
   done
+  i=0
   for opt_name in "${OPTIONAL_SINGLE_NAMES[@]}"; do
-    opt_flag="${OPTIONAL_SINGLE_FLAGS[@]}"
+    opt_flag="${OPTIONAL_SINGLE_FLAGS[$i]}"
     printf "[-$opt_flag $opt_name] "
+    i=$(($i+1))
   done
   printf "\n\n$HELP_DESCRIPTION\n\n"
   if test -n "${POSITIONAL_NAMES}"; then
@@ -153,7 +164,7 @@ print_help() {
     i=0
     for p_name in "${POSITIONAL_NAMES[@]}"; do
       printf "  %-25s ${POSITIONAL_DESCRIPTIONS[$i]}\n" "$p_name"
-      i=$(($i + 1))
+      i=$(($i+1))
     done
   fi
   if test -n "${OPTIONAL_SINGLE_NAMES}" -o -n "${OPTIONAL_BOOLEAN_NAMES}"; then
@@ -162,12 +173,12 @@ print_help() {
     i=0
     for bool_name in "${OPTIONAL_BOOLEAN_NAMES[@]}"; do
       printf "  %-25s ${OPTIONAL_BOOLEAN_DESCRIPTIONS[$i]}\n" "-${OPTIONAL_BOOLEAN_FLAGS[$i]}, --$bool_name"
-      i=$(($i + 1))
+      i=$(($i+1))
     done
     i=0
     for opt_name in "${OPTIONAL_SINGLE_NAMES[@]}"; do
       printf "  %-25s ${OPTIONAL_SINGLE_DESCRIPTIONS[$i]}\n" "-${OPTIONAL_SINGLE_FLAGS[$i]}, --$opt_name"
-      i=$(($i + 1))
+      i=$(($i+1))
     done
   fi
 }
