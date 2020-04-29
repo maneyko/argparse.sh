@@ -1,5 +1,48 @@
 #!/bin/bash
 
+# argparse.sh
+#
+# Place this file in your $PATH and source it using:
+#   source "$(type -P argparse.sh)"
+#
+# Add it to the top of your script as if it is a library you are using in a programming
+# language such as Python.
+#
+# The functions the user is supposed to use when sourcing this file in their script are:
+#
+# * arg_positional_single
+#   - This parses positional arguments to your script
+#   - Usage example: arg_positional_single "[infile] [The input file]"
+#   - CLI example: ./myscript.sh myfile.txt
+#     The value will be accessible to you via `$ARG_INFILE` after calling `parse_args`.
+#
+# * arg_optional_single
+#   - This parses optional arguments with a flag and a value arguments to your script
+#   - Usage example: arg_optional_single "[port] [p] [The port to use]"
+#   - CLI example: ./myscript.sh --port 8080
+#     The value will be accessible to you via `$ARG_PORT` after calling `parse_args`.
+#     If the flag is not used, the variable `$ARG_PORT` will not be set.
+#   - CLI example: ./myscript.sh -p8080
+#     Notice there is no space between the flag and the variable, argparse.sh will parse
+#     this correctly and `$ARG_PORT` will be set.
+#
+# * arg_optional_boolean
+#   - This parses optional flags
+#   - Usage example: arg_optional_boolean "[verbose] [v] [Do verbose output]"
+#   - CLI example: ./myscript.sh -v
+#     The value will be accessible to you via `$ARG_VERBOSE` after calling `parse_args`.
+#     If the flag is not used, the variable `$ARG_VERBOSE` will not be set.
+#
+# * arg_help
+#   - This is optional and will add the '-h' and '--help' flags as arguments to your script.
+#   - Usage example: arg_help "[My custom help message]"
+#   - CLI example: ./myscript.sh -h
+#     The commands you registered with argparse.sh will be printed to the console in a smart way.
+#
+# * parse_args
+#   - This is a required step and must be run after registering all your variables with argparse.sh.
+
+
 ARGS_ARR=("$@")
 MAIN_FILE=$0
 
