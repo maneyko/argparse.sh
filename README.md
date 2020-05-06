@@ -21,8 +21,8 @@ source "argparse.sh"
 
 arg_positional_single "[infile] [Input text file to process]"
 arg_optional_single   "[filetype] [t] [Type of text file. Can be txt, csv or tsv]"
-arg_optional_boolean  "[verbose] [v] [Print information about operations being performed]"
-arg_optional_single   "[replace] [r] [Replace first column text with second column text]"
+arg_optional_boolean  "[verbose]  [v] [Print information about operations being performed]"
+arg_optional_single   "[replace]  [r] [Replace first column text with second column text]"
 arg_help              "[This script is for processing a text file]"
 parse_args
 
@@ -90,3 +90,36 @@ as it is done in [Usage](#usage).
 ## Requirements
 
 bash >= 3
+
+## API Documentation
+
+All parameters passed to any function in `argparse.sh` must be surrounded by square brackets,
+as done in [Usage](#usage).
+
+Functions for parsing arguments:
+* `arg_positional_single`
+  * Arguments:
+    - `arg_name`
+    - `arg_description`
+* `arg_optional_single`
+  * Arguments:
+    - `arg_name`
+    - `arg_flag`
+    - `arg_description`
+* `arg_optional_boolean`
+  * Arguments:
+    - `arg_name`
+    - `arg_flag`
+    - `arg_description`
+* `arg_help`
+  * Arguments:
+    - `arg_description`
+* `parse_args`
+  * Arguments:
+    - None
+
+Secret variables!
+* `POSITIONAL`
+  - Contains positional arguments in an array
+* `print_help`
+  - Function to print the help page, automatically done if `-h` flag is present
