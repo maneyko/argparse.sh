@@ -19,11 +19,12 @@ This is how argument parsing would be configured in your script to use `argparse
 
 source "./argparse.sh"
 
+arg_positional_single "[infile] [Input text file to process]"
 arg_optional_single   "[filetype] [t] [Type of text file. Can be txt, csv or tsv]"
 arg_optional_boolean  "[verbose] [v] [Print information about operations being performed]"
 arg_optional_single   "[replace] [r] [Replace first column text with second column text]"
-arg_positional_single "[infile] [Input text file to process]"
 arg_help              "[This script is for processing a text file]"
+parse_args
 
 echo $ARG_VERBOSE
 # => true
@@ -43,13 +44,10 @@ if [ $ARG_FILETYPE = "csv" ];
 fi
 ```
 
-## Caveats
+## Notes
 
-* The `arg_help` function should be ran last in the user's script (so that it will know all the
-  possible arguments with their descriptions).
-
-* The `arg_positional_single` functions should be ran last (but before `arg_help`) to ensure they are
-  parsed anywhere in the argument string, just as it is done in [Usage](#usage).
+* The `parse_args` function needs to be ran last in the user's script (so that it will know all the
+  possible arguments).
 
 * Passing invalid arguments to the user script results in unexpected behavior from `argparse.sh`.
 
@@ -58,4 +56,4 @@ fi
 
 ## Requirements
 
-bash >= 3, perl
+bash >= 3
