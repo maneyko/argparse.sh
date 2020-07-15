@@ -3,10 +3,10 @@
 # argparse.sh
 #
 # Place this file in your $PATH and source it using:
-#   source "$(type -P argparse.sh)"
+#   source "argparse.sh"
 #
 # Or if argparse.sh is in the same directory as your script, you may use:
-#   source "argparse.sh"
+#   source "$(dirname "$0")/argparse.sh"
 #
 # Your script may still be called from anywhere in the filesystem and the relative
 # source will evaluate correctly.
@@ -16,15 +16,15 @@
 #
 # The functions the user is supposed to use when sourcing this file in their script are:
 #
-# * arg_positional_single
+# * arg_positional
 #   - This parses positional arguments to your script
-#   - Usage example: arg_positional_single "[infile] [The input file]"
+#   - Usage example: arg_positional "[infile] [The input file]"
 #   - CLI example: ./myscript.sh myfile.txt
 #     The value will be accessible to you via `$ARG_INFILE` after calling `parse_args`.
 #
-# * arg_optional_single
-#   - This parses optional arguments with a flag and a value
-#   - Usage example: arg_optional_single "[port] [p] [The port to use]"
+# * arg_optional
+#   - This parses optional flags that take a corresponding value
+#   - Usage example: arg_optional "[port] [p] [The port to use]"
 #   - CLI example: ./myscript.sh --port 8080
 #     The value will be accessible to you via `$ARG_PORT` after calling `parse_args`.
 #     If the flag is not used, the variable `$ARG_PORT` will not be set.
@@ -32,9 +32,9 @@
 #     Notice there is no space between the flag and the variable, argparse.sh will parse
 #     this correctly and `$ARG_PORT` will be set to 8080.
 #
-# * arg_optional_boolean
-#   - This parses optional flags
-#   - Usage example: arg_optional_boolean "[verbose] [v] [Do verbose output]"
+# * arg_boolean
+#   - This parses optional flags that indicate "true" by their presence
+#   - Usage example: arg_boolean "[verbose] [v] [Do verbose output]"
 #   - CLI example: ./myscript.sh -v
 #     The value will be accessible to you via `$ARG_VERBOSE` after calling `parse_args`.
 #     If the flag is not used, the variable `$ARG_VERBOSE` will not be set.
@@ -55,13 +55,13 @@ MAIN_FILE=$0
 POSITIONAL_NAMES=()
 POSITIONAL_DESCRIPTIONS=()
 
-OPTIONAL_BOOLEAN_NAMES=()
-OPTIONAL_BOOLEAN_FLAGS=()
-OPTIONAL_BOOLEAN_DESCRIPTIONS=()
+BOOLEAN_NAMES=()
+BOOLEAN_FLAGS=()
+BOOLEAN_DESCRIPTIONS=()
 
-OPTIONAL_SINGLE_NAMES=()
-OPTIONAL_SINGLE_FLAGS=()
-OPTIONAL_SINGLE_DESCRIPTIONS=()
+OPTIONAL_NAMES=()
+OPTIONAL_FLAGS=()
+OPTIONAL_DESCRIPTIONS=()
 
 HELP_DESCRIPTION=
 
@@ -71,11 +71,13 @@ clr() {  # (number, text)
 
 parse_arg1() {
   t1="${1%%\]*}"
+  t2="${1#*\]}"
+  wo_arg1="[${t2#*\[}"
   parse_arg1_result="${t1#*\[}"
 }
 
 parse_arg2() {
-  t1="${1#*[ ]}"
+  t1="${1#*\]}"
   parse_arg1 "$t1"
   parse_arg2_result="$parse_arg1_result"
 }
@@ -87,11 +89,11 @@ parse_arg3() {
 
 # @param arg_name
 # @param arg_description
-arg_positional_single() {
+arg_positional() {
   parse_arg1 "$1"
   arg_name="$parse_arg1_result"
-  parse_arg3 "$1"
-  arg_desc="$parse_arg3_result"
+  t1="${wo_arg1#*\[}"
+  arg_desc="${t1%\]*}"
   POSITIONAL_NAMES+=($arg_name)
   POSITIONAL_DESCRIPTIONS+=("$arg_desc")
 }
@@ -99,40 +101,40 @@ arg_positional_single() {
 # @param arg_name
 # @param arg_flag
 # @param arg_description
-arg_optional_single() {
+arg_optional() {
   parse_arg1 "$1"
   arg_name="$parse_arg1_result"
-  parse_arg2 "$1"
-  arg_flag="$parse_arg2_result"
-  parse_arg3 "$1"
-  arg_desc="$parse_arg3_result"
-  OPTIONAL_SINGLE_NAMES+=($arg_name)
-  OPTIONAL_SINGLE_FLAGS+=($arg_flag)
-  OPTIONAL_SINGLE_DESCRIPTIONS+=("$arg_desc")
+  parse_arg1 "$wo_arg1"
+  arg_flag="$parse_arg1_result"
+  t1="${wo_arg1#*\[}"
+  arg_desc="${t1%\]*}"
+  OPTIONAL_NAMES+=($arg_name)
+  OPTIONAL_FLAGS+=($arg_flag)
+  OPTIONAL_DESCRIPTIONS+=("$arg_desc")
 }
 
 # @param arg_name
 # @param arg_flag
 # @param arg_description
-arg_optional_boolean() {
+arg_boolean() {
   parse_arg1 "$1"
   arg_name="$parse_arg1_result"
-  parse_arg2 "$1"
-  arg_flag="$parse_arg2_result"
-  parse_arg3 "$1"
-  arg_desc="$parse_arg3_result"
-  OPTIONAL_BOOLEAN_NAMES+=($arg_name)
-  OPTIONAL_BOOLEAN_FLAGS+=($arg_flag)
-  OPTIONAL_BOOLEAN_DESCRIPTIONS+=("$arg_desc")
+  parse_arg1 "$wo_arg1"
+  arg_flag="$parse_arg1_result"
+  t1="${wo_arg1#*\[}"
+  arg_desc="${t1%\]*}"
+  BOOLEAN_NAMES+=($arg_name)
+  BOOLEAN_FLAGS+=($arg_flag)
+  BOOLEAN_DESCRIPTIONS+=("$arg_desc")
 }
 
 # @param arg_description
 arg_help() {
   t1="${1#*\[}"
   HELP_DESCRIPTION="${t1%\]*}"
-  OPTIONAL_BOOLEAN_NAMES+=("help")
-  OPTIONAL_BOOLEAN_FLAGS+=("h")
-  OPTIONAL_BOOLEAN_DESCRIPTIONS+=("Print this help message.")
+  BOOLEAN_NAMES+=("help")
+  BOOLEAN_FLAGS+=("h")
+  BOOLEAN_DESCRIPTIONS+=("Print this help message.")
 }
 
 parse_args() {
@@ -146,8 +148,8 @@ parse_args2() {
     key=$1
     found=
     i=0
-    for opt_name in "${OPTIONAL_SINGLE_NAMES[@]}"; do
-      opt_flag="${OPTIONAL_SINGLE_FLAGS[$i]}"
+    for opt_name in "${OPTIONAL_NAMES[@]}"; do
+      opt_flag="${OPTIONAL_FLAGS[$i]}"
       i=$(($i+1))
       case $key in
         -$opt_flag*|--$opt_name)
@@ -170,8 +172,8 @@ parse_args2() {
       esac
     done
     i=0
-    for opt_name in "${OPTIONAL_BOOLEAN_NAMES[@]}"; do
-      opt_flag="${OPTIONAL_BOOLEAN_FLAGS[$i]}"
+    for opt_name in "${BOOLEAN_NAMES[@]}"; do
+      opt_flag="${BOOLEAN_FLAGS[$i]}"
       i=$(($i+1))
       case $key in
         -$opt_flag|--$opt_name)
@@ -207,12 +209,12 @@ print_help() {
   for p_name in "${POSITIONAL_NAMES[@]}"; do
     printf "[$p_name] "
   done
-  for bool_flag in "${OPTIONAL_BOOLEAN_FLAGS[@]}"; do
+  for bool_flag in "${BOOLEAN_FLAGS[@]}"; do
     printf "[-$bool_flag] "
   done
   i=0
-  for opt_name in "${OPTIONAL_SINGLE_NAMES[@]}"; do
-    opt_flag="${OPTIONAL_SINGLE_FLAGS[$i]}"
+  for opt_name in "${OPTIONAL_NAMES[@]}"; do
+    opt_flag="${OPTIONAL_FLAGS[$i]}"
     printf "[-$opt_flag $opt_name] "
     i=$(($i+1))
   done
@@ -222,25 +224,49 @@ print_help() {
     i=0
     for p_name in "${POSITIONAL_NAMES[@]}"; do
       p_disp="$(clr 3 "$p_name")"
-      printf "  %-37s ${POSITIONAL_DESCRIPTIONS[$i]}\n" "$p_disp"
+      j=0
+      printf "${POSITIONAL_DESCRIPTIONS[$i]}\n" | while read line; do
+        if test $j -eq 0; then
+          printf "  %-37s ${line}\n" "$p_disp"
+        else
+          printf "  %-24s ${line}\n"
+        fi
+        j=$(($j+1))
+      done
       i=$(($i+1))
     done
   fi
-  if test -n "${OPTIONAL_SINGLE_NAMES}" -o -n "${OPTIONAL_BOOLEAN_NAMES}"; then
+  if test -n "${OPTIONAL_NAMES}" -o -n "${BOOLEAN_NAMES}"; then
     test -n "${POSITIONAL_NAMES}" && printf "\n"
     printf "optional arguments:\n"
     i=0
-    for bool_name in "${OPTIONAL_BOOLEAN_NAMES[@]}"; do
-      flag_disp="$(clr 3 "-${OPTIONAL_BOOLEAN_FLAGS[$i]}")"
+    for bool_name in "${BOOLEAN_NAMES[@]}"; do
+      flag_disp="$(clr 3 "-${BOOLEAN_FLAGS[$i]}")"
       name_disp="$(clr 3 "--$bool_name")"
-      printf "  %-50s ${OPTIONAL_BOOLEAN_DESCRIPTIONS[$i]}\n" "$flag_disp, $name_disp"
+      j=0
+      printf "${BOOLEAN_DESCRIPTIONS[$i]}\n" | while read line; do
+        if test $j -eq 0; then
+          printf "  %-50s ${line}\n" "$flag_disp, $name_disp"
+        else
+          printf "  %-24s ${line}\n"
+        fi
+        j=$(($j+1))
+      done
       i=$(($i+1))
     done
     i=0
-    for opt_name in "${OPTIONAL_SINGLE_NAMES[@]}"; do
-      flag_disp="$(clr 3 "-${OPTIONAL_SINGLE_FLAGS[$i]}")"
+    for opt_name in "${OPTIONAL_NAMES[@]}"; do
+      flag_disp="$(clr 3 "-${OPTIONAL_FLAGS[$i]}")"
       name_disp="$(clr 3 "--$opt_name")"
-      printf "  %-50s ${OPTIONAL_SINGLE_DESCRIPTIONS[$i]}\n" "$flag_disp, $name_disp"
+      j=0
+      printf "${OPTIONAL_DESCRIPTIONS[$i]}\n" | while read line; do
+        if test $j -eq 0; then
+          printf "  %-50s ${line}\n" "$flag_disp, $name_disp"
+        else
+          printf "  %-24s ${line}\n"
+        fi
+        j=$(($j+1))
+      done
       i=$(($i+1))
     done
   fi

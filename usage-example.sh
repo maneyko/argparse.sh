@@ -1,13 +1,13 @@
 #!/bin/bash
 
-source "argparse.sh"
+source "$(dirname "$0")/argparse.sh"
 
-arg_positional_single "[infile] [The file to parse]"
-arg_positional_single "[outfile] [The output file]"
-arg_optional_single   "[port-number] [p] [The port number]"
-arg_optional_single   "[outputs] [o] [The number of outputs]"
-arg_optional_boolean  "[verbose] [v] [Do verbose output]"
-arg_optional_boolean  "[flag] [f] [My important flag]"
+arg_positional "[infile] [The file to parse]"
+arg_positional "[outfile] [The output file]"
+arg_optional   "[port-number] [p] [The port number]"
+arg_optional   "[outputs] [o] [The number of outputs]"
+arg_boolean    "[verbose] [v] [Do verbose output]"
+arg_boolean    "[flag] [f] [My important flag]"
 
 read -d '' helptxt << EOT
 This file illustrates how argparse.sh can be used
