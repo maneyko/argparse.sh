@@ -65,8 +65,14 @@ OPTIONAL_DESCRIPTIONS=()
 
 HELP_DESCRIPTION=
 
-clr() {  # (number, text)
+# Color print.
+cprint() {  # (number, text)
   printf "\033[38;5;${1}m${2}\033[0m"
+}
+
+# Bold print.
+bprint() {
+  printf "\033[1m$1\033[0m"
 }
 
 parse_arg1() {
@@ -74,17 +80,6 @@ parse_arg1() {
   t2="${1#*\]}"
   wo_arg1="[${t2#*\[}"
   parse_arg1_result="${t1#*\[}"
-}
-
-parse_arg2() {
-  t1="${1#*\]}"
-  parse_arg1 "$t1"
-  parse_arg2_result="$parse_arg1_result"
-}
-
-parse_arg3() {
-  t1="${1##*\[}"
-  parse_arg3_result="${t1%\]}"
 }
 
 # @param arg_name
@@ -205,7 +200,8 @@ parse_args2() {
 }
 
 print_help() {
-  printf "usage:  `basename $MAIN_FILE` "
+  bprint "usage:"
+  printf "  `basename $MAIN_FILE` "
   for p_name in "${POSITIONAL_NAMES[@]}"; do
     printf "[$p_name] "
   done
@@ -223,7 +219,7 @@ print_help() {
     printf "positional arguments:\n"
     i=0
     for p_name in "${POSITIONAL_NAMES[@]}"; do
-      p_disp="$(clr 3 "$p_name")"
+      p_disp="$(cprint 3 "$p_name")"
       j=0
       printf "${POSITIONAL_DESCRIPTIONS[$i]}\n" | while read line; do
         if test $j -eq 0; then
@@ -241,8 +237,8 @@ print_help() {
     printf "optional arguments:\n"
     i=0
     for bool_name in "${BOOLEAN_NAMES[@]}"; do
-      flag_disp="$(clr 3 "-${BOOLEAN_FLAGS[$i]}")"
-      name_disp="$(clr 3 "--$bool_name")"
+      flag_disp="$(cprint 3 "-${BOOLEAN_FLAGS[$i]}")"
+      name_disp="$(cprint 3 "--$bool_name")"
       j=0
       printf "${BOOLEAN_DESCRIPTIONS[$i]}\n" | while read line; do
         if test $j -eq 0; then
@@ -256,8 +252,8 @@ print_help() {
     done
     i=0
     for opt_name in "${OPTIONAL_NAMES[@]}"; do
-      flag_disp="$(clr 3 "-${OPTIONAL_FLAGS[$i]}")"
-      name_disp="$(clr 3 "--$opt_name")"
+      flag_disp="$(cprint 3 "-${OPTIONAL_FLAGS[$i]}")"
+      name_disp="$(cprint 3 "--$opt_name")"
       j=0
       printf "${OPTIONAL_DESCRIPTIONS[$i]}\n" | while read line; do
         if test $j -eq 0; then
