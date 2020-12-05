@@ -161,6 +161,16 @@ parse_args2() {
               fi
             j=$(($j+1))
             done
+            j=0
+            for flag in ${OPTIONAL_FLAGS[@]}; do
+              inner_opt_name="${OPTIONAL_NAMES[$j]}"
+              if test -z "${additional_opts##*$flag*}"; then
+                value="${additional_opts##*$flag}"
+                name_upper="$(echo $inner_opt_name | tr '/a-z/' '/A-Z/' | tr '-' '_')"
+                eval "$(printf "ARG_$name_upper=$value")"
+              fi
+            j=$(($j+1))
+            done
           fi
           shift
           ;;
