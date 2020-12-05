@@ -143,9 +143,40 @@ parse_args2() {
     key=$1
     found=
     i=0
+    for opt_name in "${BOOLEAN_NAMES[@]}"; do
+      opt_flag="${BOOLEAN_FLAGS[$i]}"
+      case $key in
+        -$opt_flag*)
+          name_upper="$(echo $opt_name | tr '/a-z/' '/A-Z/' | tr '-' '_')"
+          eval "$(printf "ARG_$name_upper=true")"
+          found=1
+          if test "$key" != "-$opt_flag"; then  # More options
+            additional_opts="${key##-${opt_flag}}"
+            j=0
+            for flag in ${BOOLEAN_FLAGS[@]}; do
+              inner_opt_name="${BOOLEAN_NAMES[$j]}"
+              if test -z "${additional_opts##*$flag*}"; then
+                name_upper="$(echo $inner_opt_name | tr '/a-z/' '/A-Z/' | tr '-' '_')"
+                eval "$(printf "ARG_$name_upper=true")"
+              fi
+            j=$(($j+1))
+            done
+          fi
+          shift
+          ;;
+        --$opt_name)
+          name_upper="$(echo $opt_name | tr '/a-z/' '/A-Z/' | tr '-' '_')"
+          eval "$(printf "ARG_$name_upper=true")"
+          found=1
+          shift
+          ;;
+
+      esac
+      i=$(($i+1))
+    done
+    i=0
     for opt_name in "${OPTIONAL_NAMES[@]}"; do
       opt_flag="${OPTIONAL_FLAGS[$i]}"
-      i=$(($i+1))
       case $key in
         -$opt_flag*|--$opt_name)
           name_upper="$(echo $opt_name | tr '/a-z/' '/A-Z/' | tr '-' '_')"
@@ -165,19 +196,7 @@ parse_args2() {
           found=1
           ;;
       esac
-    done
-    i=0
-    for opt_name in "${BOOLEAN_NAMES[@]}"; do
-      opt_flag="${BOOLEAN_FLAGS[$i]}"
       i=$(($i+1))
-      case $key in
-        -$opt_flag|--$opt_name)
-          name_upper="$(echo $opt_name | tr '/a-z/' '/A-Z/' | tr '-' '_')"
-          eval "$(printf "ARG_$name_upper=true")"
-          found=1
-          shift
-          ;;
-      esac
     done
     if test -z "$found"; then
       POSITIONAL+=("$1")
