@@ -1,6 +1,6 @@
 # argparse.sh
 
-The interface for this script was inspired by [Argbash](https://argbash.io/).
+Bash script to parse command line arguments.
 
 ## Usage
 
@@ -17,26 +17,29 @@ This is how argument parsing would be configured in your script to use `argparse
 ```bash
 #!/bin/bash
 
-source "argparse.sh"
+source "$(dirname "$0")/argparse.sh"
 
-arg_positional_single "[infile] [Input text file to process]"
-arg_optional_single   "[filetype] [t] [Type of text file. Can be txt, csv or tsv]"
-arg_optional_boolean  "[verbose]  [v] [Print information about operations being performed]"
-arg_optional_single   "[replace]  [r] [Replace first column text with second column text]"
-arg_help              "[This script is for processing a text file]"
+arg_positional "[infile]       [Input text file to process]"
+arg_optional   "[filetype] [t] [Type of text file. Can be txt, csv or tsv]"
+arg_optional   "[verbose]  [v] [Print information about operations being performed]"
+arg_optional   "[columns]  [c] [Only print certain numbered columns]"
+arg_help       "[This script is for processing a text file]"
 parse_args
-
-echo $ARG_VERBOSE
-# => true
-
-echo $ARG_REPLACE
-# =>
 
 echo $ARG_INFILE
 # => input-data.txt
 
+echo $ARG_FILETYPE
+# => csv
+
+echo $ARG_VERBOSE
+# => true
+
+echo $ARG_COLUMNS
+# =>
+
 if [ -n $ARG_VERBOSE ]; then
-  echo 'Printing first column...'
+  echo 'Beginning processing...'
 fi
 
 if [ $ARG_FILETYPE = "csv" ];
@@ -77,15 +80,26 @@ parse_args
 Another installation option is to include `argparse.sh` in the same directory in your script
 as it is done in [Usage](#usage).
 
+## Advanced Usage
+
+Boolean flags and options that take values may be bundled together, like so:
+
+```bash
+$ ./usage-example.sh -vfp2020 --outputs 4 infile.txt
+infile:      infile.txt
+outfile:
+port-number: 2020
+outputs:     4
+verbose:     true
+flag:        true
+```
+
 ## Notes
 
 * The `parse_args` function needs to be ran last after all the other functions in `argparse.sh` have been called.
   This is so that it will know all the possible arguments.
 
 * Passing invalid arguments to the user script results in unexpected behavior from `argparse.sh`.
-
-* Optional arguments with a corresponding value may be passed without whitespace in between. So you
-  may do `./process_file.sh -tcsv input-data.txt`.
 
 ## Requirements
 
@@ -97,16 +111,16 @@ All parameters passed to any function in `argparse.sh` must be surrounded by squ
 as done in [Usage](#usage).
 
 Functions for parsing arguments:
-* `arg_positional_single`
+* `arg_positional`
   * Arguments:
     - `arg_name`
     - `arg_description`
-* `arg_optional_single`
+* `arg_optional`
   * Arguments:
     - `arg_name`
     - `arg_flag`
     - `arg_description`
-* `arg_optional_boolean`
+* `arg_boolean`
   * Arguments:
     - `arg_name`
     - `arg_flag`
