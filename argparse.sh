@@ -172,7 +172,7 @@ parse_args2() {
               if test -z "${additional_opts##*$flag*}"; then
                 value="${additional_opts##*$flag}"
                 name_upper="$(echo $inner_opt_name | tr '/a-z/' '/A-Z/' | tr '-' '_')"
-                eval "$(printf "ARG_$name_upper=\"$value\"")"
+                eval "$(printf "ARG_$name_upper='${value}'")"
               fi
             j=$(($j+1))
             done
@@ -207,7 +207,7 @@ parse_args2() {
             val="$2"
             shift; shift
           fi
-          eval "$(printf "ARG_$name_upper=\"$val\"")"
+          eval "$(printf "ARG_$name_upper='${val}'")"
           found=1
           ;;
       esac
@@ -222,8 +222,10 @@ parse_args2() {
 
   i=0
   for name in "${POSITIONAL_NAMES[@]}"; do
+    arg_i="${POSITIONAL[$i]}"
+    test -z "$arg_i" && continue
     name_upper="$(echo $name | tr '/a-z/' '/A-Z/' | tr '-' '_')"
-    eval "$(printf "ARG_$name_upper=${POSITIONAL[$i]}")"
+    eval "$(printf "ARG_$name_upper='$arg_i'")"
     i=$(($i+1))
   done
 
