@@ -114,7 +114,7 @@ arg_array() {
   name_upper="$(echo "$1" | tr '/a-z-/' '/A-Z_/')"
   eval "$(printf "ARG_$name_upper=()")"
   ARRAY_FLAGS+=("$2")
-  ARRAY_DESCRIPTIONS+=("$arg_desc")
+  ARRAY_DESCRIPTIONS+=("$3")
 }
 
 # @param arg_description

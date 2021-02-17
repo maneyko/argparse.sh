@@ -93,6 +93,7 @@ port-number: 2020
 outputs:     4
 verbose:     true
 flag:        true
+directory:
 ```
 
 ## Notes
