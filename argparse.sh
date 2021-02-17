@@ -302,6 +302,12 @@ print_help() {
     printf "[-$opt_flag $opt_name] "
     i=$(($i+1))
   done
+  i=0
+  for opt_name in "${ARRAY_NAMES[@]}"; do
+    opt_flag="${ARRAY_FLAGS[$i]}"
+    printf "[-$opt_flag $opt_name -$opt_flag ...] "
+    i=$(($i+1))
+  done
   printf "\n\n$HELP_DESCRIPTION\n\n"
   if test -n "${POSITIONAL_NAMES}"; then
     printf "positional arguments:\n"
@@ -320,9 +326,24 @@ print_help() {
       i=$(($i+1))
     done
   fi
-  if test -n "${OPTIONAL_NAMES}" -o -n "${BOOLEAN_NAMES}"; then
+  if test -n "${OPTIONAL_NAMES}" -o -n "${BOOLEAN_NAMES}" -o -n "${ARRAY_NAMES}"; then
     test -n "${POSITIONAL_NAMES}" && printf "\n"
     printf "optional arguments:\n"
+    i=0
+    for opt_name in "${ARRAY_NAMES[@]}"; do
+      flag_disp="$(cprint 3 "-${ARRAY_FLAGS[$i]}")"
+      name_disp="$(cprint 3 "--$opt_name")"
+      j=0
+      printf "${ARRAY_DESCRIPTIONS[$i]}\n" | while read line; do
+        if test $j -eq 0; then
+          printf "  %-50s ${line}\n" "$flag_disp, $name_disp"
+        else
+          printf "  %-24s ${line}\n"
+        fi
+        j=$(($j+1))
+      done
+      i=$(($i+1))
+    done
     i=0
     for opt_name in "${OPTIONAL_NAMES[@]}"; do
       flag_disp="$(cprint 3 "-${OPTIONAL_FLAGS[$i]}")"
