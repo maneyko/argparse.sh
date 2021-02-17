@@ -84,72 +84,42 @@ bprint() {
   printf "\033[1m$1\033[0m"
 }
 
-parse_arg1() {
-  t1="${1%%\]*}"
-  t2="${1#*\]}"
-  wo_arg1="[${t2#*\[}"
-  parse_arg1_result="${t1#*\[}"
-}
-
 # @param arg_name
 # @param arg_description
 arg_positional() {
-  parse_arg1 "$1"
-  arg_name="$parse_arg1_result"
-  t1="${wo_arg1#*\[}"
-  arg_desc="${t1%\]*}"
-  POSITIONAL_NAMES+=($arg_name)
-  POSITIONAL_DESCRIPTIONS+=("$arg_desc")
+  POSITIONAL_NAMES+=("$1")
+  POSITIONAL_DESCRIPTIONS+=("$2")
 }
 
 # @param arg_name
 # @param arg_flag
 # @param arg_description
 arg_optional() {
-  parse_arg1 "$1"
-  arg_name="$parse_arg1_result"
-  parse_arg1 "$wo_arg1"
-  arg_flag="$parse_arg1_result"
-  t1="${wo_arg1#*\[}"
-  arg_desc="${t1%\]*}"
-  OPTIONAL_NAMES+=($arg_name)
-  OPTIONAL_FLAGS+=($arg_flag)
-  OPTIONAL_DESCRIPTIONS+=("$arg_desc")
+  OPTIONAL_NAMES+=("$1")
+  OPTIONAL_FLAGS+=("$2")
+  OPTIONAL_DESCRIPTIONS+=("$3")
 }
 
 # @param arg_name
 # @param arg_flag
 # @param arg_description
 arg_boolean() {
-  parse_arg1 "$1"
-  arg_name="$parse_arg1_result"
-  parse_arg1 "$wo_arg1"
-  arg_flag="$parse_arg1_result"
-  t1="${wo_arg1#*\[}"
-  arg_desc="${t1%\]*}"
-  BOOLEAN_NAMES+=($arg_name)
-  BOOLEAN_FLAGS+=($arg_flag)
-  BOOLEAN_DESCRIPTIONS+=("$arg_desc")
+  BOOLEAN_NAMES+=("$1")
+  BOOLEAN_FLAGS+=("$2")
+  BOOLEAN_DESCRIPTIONS+=("$3")
 }
 
 arg_array() {
-  parse_arg1 "$1"
-  arg_name="$parse_arg1_result"
-  parse_arg1 "$wo_arg1"
-  arg_flag="$parse_arg1_result"
-  t1="${wo_arg1#*\[}"
-  arg_desc="${t1%\]*}"
-  ARRAY_NAMES+=($arg_name)
-  name_upper="$(echo $arg_name | tr '/a-z-/' '/A-Z_/')"
+  ARRAY_NAMES+=("$1")
+  name_upper="$(echo "$1" | tr '/a-z-/' '/A-Z_/')"
   eval "$(printf "ARG_$name_upper=()")"
-  ARRAY_FLAGS+=($arg_flag)
+  ARRAY_FLAGS+=("$2")
   ARRAY_DESCRIPTIONS+=("$arg_desc")
 }
 
 # @param arg_description
 arg_help() {
-  t1="${1#*\[}"
-  HELP_DESCRIPTION="${t1%\]*}"
+  HELP_DESCRIPTION="$1"
   BOOLEAN_NAMES+=("help")
   BOOLEAN_FLAGS+=("h")
   BOOLEAN_DESCRIPTIONS+=("Print this help message.")
