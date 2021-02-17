@@ -111,7 +111,7 @@ arg_boolean() {
 
 arg_array() {
   ARRAY_NAMES+=("$1")
-  name_upper="$(echo "$1" | tr '/a-z-/' '/A-Z_/')"
+  name_upper="$(echo "$1" | tr '[:lower:]-' '[:upper:]_')"
   eval "$(printf "ARG_$name_upper=()")"
   ARRAY_FLAGS+=("$2")
   ARRAY_DESCRIPTIONS+=("$3")
@@ -140,7 +140,7 @@ parse_args2() {
       opt_flag="${BOOLEAN_FLAGS[$i]}"
       case $key in
         -$opt_flag*)
-          name_upper="$(echo $opt_name | tr '/a-z-/' '/A-Z_/')"
+          name_upper="$(echo $opt_name | tr '[:lower:]-' '[:upper:]_')"
           eval "$(printf "ARG_$name_upper=true")"
           found=1
           if test "$key" != "-$opt_flag"; then
@@ -149,7 +149,7 @@ parse_args2() {
             for flag in ${BOOLEAN_FLAGS[@]}; do
               inner_opt_name="${BOOLEAN_NAMES[$j]}"
               if test -z "${additional_opts##*$flag*}"; then
-                name_upper="$(echo $inner_opt_name | tr '/a-z-/' '/A-Z_/')"
+                name_upper="$(echo $inner_opt_name | tr '[:lower:]-' '[:upper:]_')"
                 eval "$(printf "ARG_$name_upper=true")"
               fi
             j=$(($j+1))
@@ -159,7 +159,7 @@ parse_args2() {
               inner_opt_name="${OPTIONAL_NAMES[$j]}"
               if test -z "${additional_opts##*$flag*}"; then
                 value="${additional_opts##*$flag}"
-                name_upper="$(echo $inner_opt_name | tr '/a-z-/' '/A-Z_/')"
+                name_upper="$(echo $inner_opt_name | tr '[:lower:]-' '[:upper:]_')"
                 eval "$(printf "ARG_$name_upper='${value}'")"
               fi
             j=$(($j+1))
@@ -169,7 +169,7 @@ parse_args2() {
               inner_opt_name="${ARRAY_NAMES[$j]}"
               if test -z "${additional_opts##*$flag*}"; then
                 value="${additional_opts##*$flag}"
-                name_upper="$(echo $inner_opt_name | tr '/a-z-/' '/A-Z_/')"
+                name_upper="$(echo $inner_opt_name | tr '[:lower:]-' '[:upper:]_')"
                 eval "$(printf "ARG_$name_upper+=('${value}')")"
               fi
             j=$(($j+1))
@@ -178,7 +178,7 @@ parse_args2() {
           shift
           ;;
         --$opt_name)
-          name_upper="$(echo $opt_name | tr '/a-z-/' '/A-Z_/')"
+          name_upper="$(echo $opt_name | tr '[:lower:]-' '[:upper:]_')"
           eval "$(printf "ARG_$name_upper=true")"
           found=1
           shift
@@ -192,7 +192,7 @@ parse_args2() {
       opt_flag="${OPTIONAL_FLAGS[$i]}"
       case $key in
         -$opt_flag*|--$opt_name)
-          name_upper="$(echo $opt_name | tr '/a-z-/' '/A-Z_/')"
+          name_upper="$(echo $opt_name | tr '[:lower:]-' '[:upper:]_')"
           if [[ $key =~ ^-$opt_flag ]]; then
             if [[ $key == -$opt_flag ]]; then
               val="$2"
@@ -216,7 +216,7 @@ parse_args2() {
       opt_flag="${ARRAY_FLAGS[$i]}"
       case $key in
         -$opt_flag*|--$opt_name)
-          name_upper="$(echo $opt_name | tr '/a-z-/' '/A-Z_/')"
+          name_upper="$(echo $opt_name | tr '[:lower:]-' '[:upper:]_')"
           if [[ $key =~ ^-$opt_flag ]]; then
             if [[ $key == -$opt_flag ]]; then
               val="$2"
@@ -246,7 +246,7 @@ parse_args2() {
   for name in "${POSITIONAL_NAMES[@]}"; do
     arg_i="${POSITIONAL[$i]}"
     test -z "$arg_i" && continue
-    name_upper="$(echo $name | tr '/a-z-/' '/A-Z_/')"
+    name_upper="$(echo $name | tr '[:lower:]-' '[:upper:]_')"
     eval "$(printf "ARG_$name_upper='$arg_i'")"
     i=$(($i+1))
   done
