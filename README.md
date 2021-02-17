@@ -52,7 +52,7 @@ To get a better idea of the usage in a real shell script, look at
 The script may be called like this:
 
 ```bash
-./usage-example.sh -f -p2020 infile.txt --verbose outfile.txt --outputs 3
+./usage-example.sh -f -p2020 infile.txt -d2 --verbose outfile.txt --outputs 3 -d 4 --directory 8
 
 infile:      infile.txt
 outfile:     outfile.txt
@@ -60,6 +60,7 @@ port-number: 2020
 outputs:     3
 verbose:     true
 flag:        true
+directories: 2 4 8
 ```
 
 ## Installation
@@ -121,6 +122,11 @@ Functions for parsing arguments:
     - `arg_flag`
     - `arg_description`
 * `arg_boolean`
+  * Arguments:
+    - `arg_name`
+    - `arg_flag`
+    - `arg_description`
+* `arg_array`
   * Arguments:
     - `arg_name`
     - `arg_flag`
