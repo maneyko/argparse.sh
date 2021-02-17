@@ -19,11 +19,11 @@ This is how argument parsing would be configured in your script to use `argparse
 
 source "$(dirname "$0")/argparse.sh"
 
-arg_positional "[infile]       [Input text file to process]"
-arg_optional   "[filetype] [t] [Type of text file. Can be txt, csv or tsv]"
-arg_optional   "[verbose]  [v] [Print information about operations being performed]"
-arg_optional   "[columns]  [c] [Only print certain numbered columns]"
-arg_help       "[This script is for processing a text file]"
+arg_positional "infile"       "Input text file to process"
+arg_optional   "filetype" "t" "Type of text file. Can be txt, csv or tsv"
+arg_optional   "verbose"  "v" "Print information about operations being performed"
+arg_optional   "columns"  "c" "Only print certain numbered columns"
+arg_help       "This script is for processing a text file"
 parse_args
 
 echo $ARG_INFILE
@@ -74,7 +74,7 @@ on your filesystem, you may do:
 
 source "$(type -P argparse.sh)"
 
-arg_help "[This is the help option.]"
+arg_help "This is the help option."
 parse_args
 ```
 

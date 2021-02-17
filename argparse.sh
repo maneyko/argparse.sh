@@ -18,13 +18,13 @@
 #
 # * arg_positional
 #   - This parses positional arguments to your script
-#   - Usage example: arg_positional "[infile] [The input file]"
+#   - Usage example: arg_positional "infile" "The input file"
 #   - CLI example: ./myscript.sh myfile.txt
 #     The value will be accessible to you via `$ARG_INFILE` after calling `parse_args`.
 #
 # * arg_optional
 #   - This parses optional flags that take a corresponding value
-#   - Usage example: arg_optional "[port] [p] [The port to use]"
+#   - Usage example: arg_optional "port" "p" "The port to use"
 #   - CLI example: ./myscript.sh --port 8080
 #     The value will be accessible to you via `$ARG_PORT` after calling `parse_args`.
 #     If the flag is not used, the variable `$ARG_PORT` will not be set.
@@ -34,14 +34,14 @@
 #
 # * arg_boolean
 #   - This parses optional flags that indicate "true" by their presence
-#   - Usage example: arg_boolean "[verbose] [v] [Do verbose output]"
+#   - Usage example: arg_boolean "verbose" "v" "Do verbose output"
 #   - CLI example: ./myscript.sh -v
 #     The value will be accessible to you via `$ARG_VERBOSE` after calling `parse_args`.
 #     If the flag is not used, the variable `$ARG_VERBOSE` will not be set.
 #
 # * arg_help
 #   - This is optional and will add the '-h' and '--help' flags as arguments to your script.
-#   - Usage example: arg_help "[My custom help message]"
+#   - Usage example: arg_help "My custom help message"
 #   - CLI example: ./myscript.sh -h
 #     All the commands you registered with argparse.sh will be printed to the console in a smart way.
 #
