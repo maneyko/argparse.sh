@@ -186,7 +186,7 @@ parse_args2() {
       case $key in
         -$opt_flag*)
           name_upper="$(echo $opt_name | tr '/a-z-/' '/A-Z_/')"
-          eval "$(printf "ARG_$name_upper=true")"
+          printf -v "ARG_$name_upper" "true"
           found=1
           if test "$key" != "-$opt_flag"; then
             additional_opts="${key##-${opt_flag}}"
@@ -195,7 +195,7 @@ parse_args2() {
               inner_opt_name="${BOOLEAN_NAMES[$j]}"
               if test -z "${additional_opts##*$flag*}"; then
                 name_upper="$(echo $inner_opt_name | tr '/a-z-/' '/A-Z_/')"
-                eval "$(printf "ARG_$name_upper=true")"
+                printf -v "ARG_$name_upper" "true"
               fi
             j=$(($j+1))
             done
@@ -205,7 +205,7 @@ parse_args2() {
               if test -z "${additional_opts##*$flag*}"; then
                 value="${additional_opts##*$flag}"
                 name_upper="$(echo $inner_opt_name | tr '/a-z-/' '/A-Z_/')"
-                eval "$(printf "ARG_$name_upper='${value}'")"
+                printf -v "ARG_$name_upper" "$value"
               fi
             j=$(($j+1))
             done
@@ -217,9 +217,9 @@ parse_args2() {
                 name_upper="$(echo $inner_opt_name | tr '/a-z-/' '/A-Z_/')"
                 if test -z "$found_array_arg"; then
                   found_array_arg=1
-                  eval "$(printf "ARG_$name_upper=()")"
+                  unset "ARG_$name_upper"
                 fi
-                eval "$(printf "ARG_$name_upper+=('${value}')")"
+                eval "ARG_$name_upper+=($value)"
               fi
             j=$(($j+1))
             done
@@ -228,7 +228,7 @@ parse_args2() {
           ;;
         --$opt_name)
           name_upper="$(echo $opt_name | tr '/a-z-/' '/A-Z_/')"
-          eval "$(printf "ARG_$name_upper=true")"
+          printf -v "ARG_$name_upper" "true"
           found=1
           shift
           ;;
@@ -254,7 +254,7 @@ parse_args2() {
             val="$2"
             shift; shift
           fi
-          eval "$(printf "ARG_$name_upper='${val}'")"
+          printf -v "ARG_$name_upper" "$val"
           found=1
           ;;
       esac
@@ -280,9 +280,9 @@ parse_args2() {
           fi
           if test -z "$found_array_arg"; then
             found_array_arg=1
-            eval "$(printf "ARG_$name_upper=()")"
+            unset "ARG_$name_upper"
           fi
-          eval "$(printf "ARG_$name_upper+=('${val}')")"
+          eval "ARG_$name_upper+=($val)"
           found=1
           ;;
       esac
@@ -300,7 +300,7 @@ parse_args2() {
     arg_i="${POSITIONAL[$i]}"
     test -z "$arg_i" && continue
     name_upper="$(echo $name | tr '/a-z-/' '/A-Z_/')"
-    eval "$(printf "ARG_$name_upper='$arg_i'")"
+    printf -v "ARG_$name_upper" "$arg_i"
     i=$(($i+1))
   done
 

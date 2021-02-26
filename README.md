@@ -105,7 +105,7 @@ numbers:
 
 ## Requirements
 
-bash >= 3
+bash >= 3.1
 
 ## API Documentation
 
