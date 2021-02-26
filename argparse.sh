@@ -105,7 +105,8 @@ parse_arg1() {
 # @param arg_name
 # @param arg_description
 arg_positional() {
-  parse_arg1 "$1"
+  arg="$@"
+  parse_arg1 "$arg"
   arg_name="$parse_arg1_result"
   t1="${wo_arg1#*\[}"
   arg_desc="${t1%\]*}"
@@ -117,7 +118,8 @@ arg_positional() {
 # @param arg_flag
 # @param arg_description
 arg_optional() {
-  parse_arg1 "$1"
+  arg="$@"
+  parse_arg1 "$arg"
   arg_name="$parse_arg1_result"
   parse_arg1 "$wo_arg1"
   arg_flag="$parse_arg1_result"
@@ -132,7 +134,8 @@ arg_optional() {
 # @param arg_flag
 # @param arg_description
 arg_boolean() {
-  parse_arg1 "$1"
+  arg="$@"
+  parse_arg1 "$arg"
   arg_name="$parse_arg1_result"
   parse_arg1 "$wo_arg1"
   arg_flag="$parse_arg1_result"
@@ -144,22 +147,22 @@ arg_boolean() {
 }
 
 arg_array() {
-  parse_arg1 "$1"
+  arg="$@"
+  parse_arg1 "$arg"
   arg_name="$parse_arg1_result"
   parse_arg1 "$wo_arg1"
   arg_flag="$parse_arg1_result"
   t1="${wo_arg1#*\[}"
   arg_desc="${t1%\]*}"
   ARRAY_NAMES+=($arg_name)
-  name_upper="$(echo $arg_name | tr '/a-z-/' '/A-Z_/')"
-  eval "$(printf "ARG_$name_upper=()")"
   ARRAY_FLAGS+=($arg_flag)
   ARRAY_DESCRIPTIONS+=("$arg_desc")
 }
 
 # @param arg_description
 arg_help() {
-  t1="${1#*\[}"
+  arg="$@"
+  t1="${arg#*\[}"
   HELP_DESCRIPTION="${t1%\]*}"
   BOOLEAN_NAMES+=("help")
   BOOLEAN_FLAGS+=("h")
@@ -173,6 +176,7 @@ parse_args() {
 # @param args_arr
 parse_args2() {
   POSITIONAL=()
+  found_array_arg=
   while test $# -gt 0; do
     key=$1
     found=
@@ -211,6 +215,10 @@ parse_args2() {
               if test -z "${additional_opts##*$flag*}"; then
                 value="${additional_opts##*$flag}"
                 name_upper="$(echo $inner_opt_name | tr '/a-z-/' '/A-Z_/')"
+                if test -z "$found_array_arg"; then
+                  found_array_arg=1
+                  eval "$(printf "ARG_$name_upper=()")"
+                fi
                 eval "$(printf "ARG_$name_upper+=('${value}')")"
               fi
             j=$(($j+1))
@@ -269,6 +277,10 @@ parse_args2() {
           else
             val="$2"
             shift; shift
+          fi
+          if test -z "$found_array_arg"; then
+            found_array_arg=1
+            eval "$(printf "ARG_$name_upper=()")"
           fi
           eval "$(printf "ARG_$name_upper+=('${val}')")"
           found=1

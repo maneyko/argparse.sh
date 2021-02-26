@@ -2,13 +2,15 @@
 
 source "$(dirname "$0")/argparse.sh"
 
+ARG_NUMBERS=(1 2 3)
+
 arg_positional "[infile]          [The file to parse]"
 arg_positional "[outfile]         [The output file]"
 arg_optional   "[port-number] [p] [The port number]"
 arg_optional   "[outputs]     [o] [The number of outputs]"
 arg_boolean    "[verbose]     [v] [Do verbose output]"
 arg_boolean    "[flag]        [f] [My important flag]"
-arg_array      "[numbers]     [n] [Numbers to add together]"
+arg_array      "[numbers]     [n] [Numbers to add together. Default is: [${ARG_NUMBERS[@]}]]"
 
 read -d '' helptxt << EOT
 This file illustrates how argparse.sh can be used
