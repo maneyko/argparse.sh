@@ -2,6 +2,8 @@
 
 # argparse.sh
 #
+# https://github.com/maneyko/argparse.sh
+#
 # Place this file in your $PATH and source it using:
 #   source "argparse.sh"
 #
@@ -38,6 +40,15 @@
 #   - CLI example: ./myscript.sh -v
 #     The value will be accessible to you via `$ARG_VERBOSE` after calling `parse_args`.
 #     If the flag is not used, the variable `$ARG_VERBOSE` will not be set.
+#
+# * arg_array
+#   - This parses any number of the same flag and stores the values in an array
+#   - Usage example: arg_array "[number] [n] [Numbers to add together.]"
+#   - CLI example: ./myscript.sh -n2 -n2 --numbers 29
+#     The value will be accessible to you via `$ARG_NUMBERS` after calling `parse_args`.
+#     You may access the third value by calling "${ARG_NUMBERS[2]}".
+#     In this example "${ARG_NUMBERS[2]}" is 29.
+#     If the flag is not used, the variable `$ARG_NUMBERS` will not be set.
 #
 # * arg_help
 #   - This is optional and will add the '-h' and '--help' flags as arguments to your script.

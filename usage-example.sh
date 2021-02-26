@@ -8,7 +8,7 @@ arg_optional   "[port-number] [p] [The port number]"
 arg_optional   "[outputs]     [o] [The number of outputs]"
 arg_boolean    "[verbose]     [v] [Do verbose output]"
 arg_boolean    "[flag]        [f] [My important flag]"
-arg_array      "[directory]   [d] [A number of directories]"
+arg_array      "[numbers]     [n] [Numbers to add together]"
 
 read -d '' helptxt << EOT
 This file illustrates how argparse.sh can be used
@@ -25,5 +25,5 @@ port-number: $ARG_PORT_NUMBER
 outputs:     $ARG_OUTPUTS
 verbose:     $ARG_VERBOSE
 flag:        $ARG_FLAG
-directory:   ${ARG_DIRECTORY[@]}
+numbers:     ${ARG_NUMBERS[@]}
 EOT

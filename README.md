@@ -52,7 +52,7 @@ To get a better idea of the usage in a real shell script, look at
 The script may be called like this:
 
 ```bash
-./usage-example.sh -f -p2020 infile.txt -d2 --verbose outfile.txt --outputs 3 -d 4 --directory 8
+./usage-example.sh -f -p2020 infile.txt -n2 --verbose outfile.txt --outputs 3 -n 4 --numbers 8
 
 infile:      infile.txt
 outfile:     outfile.txt
@@ -60,7 +60,7 @@ port-number: 2020
 outputs:     3
 verbose:     true
 flag:        true
-directories: 2 4 8
+numbers:     2 4 8
 ```
 
 ## Installation
@@ -93,6 +93,7 @@ port-number: 2020
 outputs:     4
 verbose:     true
 flag:        true
+numbers:
 ```
 
 ## Notes
