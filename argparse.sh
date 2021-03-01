@@ -193,9 +193,10 @@ parse_args2() {
             j=0
             for flag in ${BOOLEAN_FLAGS[@]}; do
               inner_opt_name="${BOOLEAN_NAMES[$j]}"
-              if test -z "${additional_opts##*$flag*}"; then
+              if test -z "${additional_opts##$flag*}"; then
                 name_upper="$(echo $inner_opt_name | tr '/a-z-/' '/A-Z_/')"
                 printf -v "ARG_$name_upper" "true"
+                additional_opts="${additional_opts##$flag}"
               fi
             j=$(($j+1))
             done
