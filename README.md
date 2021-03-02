@@ -72,14 +72,14 @@ on your filesystem, you may do:
 ```bash
 #!/bin/bash
 
-source "$(type -P argparse.sh)"
+source "argparse.sh"
 
 arg_help "[This is the help option.]"
 parse_args
 ```
 
 Another installation option is to include `argparse.sh` in the same directory in your script
-as it is done in [Usage](#usage).
+as is done in [Usage](#usage).
 
 ## Advanced Usage
 
