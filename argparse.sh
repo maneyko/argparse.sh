@@ -189,13 +189,14 @@ parse_args2() {
             additional_opts="${key##-${opt_flag}}"
             j=0
             for flag in ${BOOLEAN_FLAGS[@]}; do
-              inner_opt_name="${BOOLEAN_NAMES[$j]}"
               if [[ -z ${additional_opts##$flag*} ]]; then
+                inner_opt_name="${BOOLEAN_NAMES[$j]}"
                 name_upper=$(echo $inner_opt_name | tr '/a-z-/' '/A-Z_/')
                 printf -v "ARG_$name_upper" 'true'
                 additional_opts="${additional_opts##$flag}"
               fi
-            j=$(($j+1))
+              [[ -z $additional_opts ]] && break
+              j=$(($j+1))
             done
             j=0
             for flag in ${OPTIONAL_FLAGS[@]}; do
@@ -205,7 +206,7 @@ parse_args2() {
                 name_upper=$(echo $inner_opt_name | tr '/a-z-/' '/A-Z_/')
                 printf -v "ARG_$name_upper" "$value"
               fi
-            j=$(($j+1))
+              j=$(($j+1))
             done
             j=0
             for flag in ${ARRAY_FLAGS[@]}; do
@@ -219,7 +220,7 @@ parse_args2() {
                 fi
                 eval "ARG_$name_upper+=($value)"
               fi
-            j=$(($j+1))
+              j=$(($j+1))
             done
           fi
           shift
