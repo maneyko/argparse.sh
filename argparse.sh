@@ -357,7 +357,7 @@ print_help() {
       name_disp="$(cprint 3 "--$opt_name")"
       j=0
       printf "${ARRAY_DESCRIPTIONS[$i]}\n" | while read line; do
-        if test $j -eq 0; then
+        if [[ $j -eq 0 ]]; then
           printf "  %-50s $line\n" "$flag_disp, $name_disp"
         else
           printf "  %-24s $line\n"
@@ -372,7 +372,7 @@ print_help() {
       name_disp="$(cprint 3 "--$opt_name")"
       j=0
       printf "${OPTIONAL_DESCRIPTIONS[$i]}\n" | while read line; do
-        if test $j -eq 0; then
+        if [[ $j -eq 0 ]]; then
           printf "  %-50s $line\n" "$flag_disp, $name_disp"
         else
           printf "  %-24s $line\n"
@@ -387,7 +387,7 @@ print_help() {
       name_disp="$(cprint 3 "--$bool_name")"
       j=0
       printf "${BOOLEAN_DESCRIPTIONS[$i]}\n" | while read line; do
-        if test $j -eq 0; then
+        if [[ $j -eq 0 ]]; then
           printf "  %-50s $line\n" "$flag_disp, $name_disp"
         else
           printf "  %-24s $line\n"
