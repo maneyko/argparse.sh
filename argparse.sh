@@ -91,27 +91,22 @@ cprint() {
   printf "\033[38;5;${1}m${2}\033[0m"
 }
 
-FOO=$(/usr/bin/perl -x "$0" "${ARGS_ARR[@]}")
-
-echo << '__END__' > /dev/null
-#!/usr/bin/perl
-
-use Getopt::Long;
+perl - "${ARGS_ARR[@]}" << 'EOT'
+use Getopt::Long qw(:config default);
 
 my $data   = "file.dat";
 my $length = 24;
 my $verbose;
-GetOptions ("length=i" => \$length,     # numeric
-            "file=s"   => \$data,       # string
-            "verbose"  => \$verbose);   # flag
+GetOptions(
+  "length=i" => \$length,  # numeric
+  "file=s"   => \$data,    # string
+  "verbose"  => \$verbose  # flag
+);
 
-print "$verbose\n";
+print "length: $length\n";
+print "file: $file\n";
+print "verbose: $verbose\n";
 
 print "@ARGV[1]\n";
 print "In perl\n\n\n";
-
-__END__
-
-cat << EOT
-$(/usr/bin/perl -x "$0" "${ARGS_ARR[@]}")
 EOT
