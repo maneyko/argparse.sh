@@ -239,20 +239,24 @@ parse_args2() {
     for opt_name in "${OPTIONAL_NAMES[@]}"; do
       opt_flag="${OPTIONAL_FLAGS[$i]}"
       case $key in
-        -$opt_flag*|--$opt_name)
+        -$opt_flag)
           name_upper=$(echo $opt_name | tr '/a-z-/' '/A-Z_/')
-          if [[ $key =~ ^-$opt_flag ]]; then
-            if [[ $key == -$opt_flag ]]; then
-              val="$2"
-              shift; shift
-            else
-              val="${key/-$opt_flag}"
-              shift
-            fi
-          else
-            val="$2"
-            shift; shift
-          fi
+          val="$2"
+          shift; shift
+          printf -v "ARG_$name_upper" "$val"
+          found=1
+          ;;
+        -$opt_flag*)
+          name_upper=$(echo $opt_name | tr '/a-z-/' '/A-Z_/')
+          val="${key/-$opt_flag}"
+          shift
+          printf -v "ARG_$name_upper" "$val"
+          found=1
+          ;;
+        --$opt_name)
+          name_upper=$(echo $opt_name | tr '/a-z-/' '/A-Z_/')
+          val="$2"
+          shift; shift
           printf -v "ARG_$name_upper" "$val"
           found=1
           ;;
@@ -263,20 +267,32 @@ parse_args2() {
     for opt_name in "${ARRAY_NAMES[@]}"; do
       opt_flag="${ARRAY_FLAGS[$i]}"
       case $key in
-        -$opt_flag*|--$opt_name)
+        -$opt_flag)
           name_upper=$(echo $opt_name | tr '/a-z-/' '/A-Z_/')
-          if [[ $key =~ ^-$opt_flag ]]; then
-            if [[ $key == -$opt_flag ]]; then
-              val="$2"
-              shift; shift
-            else
-              val="${key/-$opt_flag}"
-              shift
-            fi
-          else
-            val="$2"
-            shift; shift
+          val="$2"
+          shift; shift
+          if [[ -z $found_array_arg ]]; then
+            found_array_arg=1
+            unset "ARG_$name_upper"
           fi
+          eval "ARG_$name_upper+=($val)"
+          found=1
+          ;;
+        -$opt_flag*)
+          name_upper=$(echo $opt_name | tr '/a-z-/' '/A-Z_/')
+          val="${key/-$opt_flag}"
+          shift
+          if [[ -z $found_array_arg ]]; then
+            found_array_arg=1
+            unset "ARG_$name_upper"
+          fi
+          eval "ARG_$name_upper+=($val)"
+          found=1
+          ;;
+        --$opt_name)
+          name_upper=$(echo $opt_name | tr '/a-z-/' '/A-Z_/')
+          val="$2"
+          shift; shift
           if [[ -z $found_array_arg ]]; then
             found_array_arg=1
             unset "ARG_$name_upper"
