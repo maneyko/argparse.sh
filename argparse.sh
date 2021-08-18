@@ -321,7 +321,7 @@ parse_args2() {
 
 print_help() {
   bprint "usage:"
-  printf "  `basename $0` "
+  printf "  ${0##*/} "
   for p_name in "${POSITIONAL_NAMES[@]}"; do
     printf "[$p_name] "
   done
