@@ -79,16 +79,24 @@ HELP_DESCRIPTION=
 # Bold print.
 #
 # @param text [String]
+# @param args [String]
 bprint() {
-  printf "\033[1m$1\033[0m"
+  bprint_string="\033[1m$1\033[0m"
+  if [[ "$2" != --quiet ]]; then
+    printf "$bprint_string"
+  fi
 }
 
 # Color print.
 #
 # @param number [Integer]
 # @param text   [String]
+# @param args   [String]
 cprint() {
-  printf "\033[38;5;${1}m${2}\033[0m"
+  cprint_string="\033[38;5;${1}m${2}\033[0m"
+  if [[ "$3" != --quiet ]]; then
+    printf "$cprint_string"
+  fi
 }
 
 # @param arg_options
@@ -166,8 +174,9 @@ arg_help() {
   BOOLEAN_DESCRIPTIONS+=('Print this help message.')
 }
 
-upcase() {
-  res="${1//a/A}"
+get_name_upper() {
+  res="${1//-/_}"
+  res="${res//a/A}"
   res="${res//b/B}"
   res="${res//c/C}"
   res="${res//d/D}"
@@ -192,7 +201,7 @@ upcase() {
   res="${res//w/W}"
   res="${res//x/X}"
   res="${res//y/Y}"
-  res="${res//z/Z}"
+  name_upper="${res//z/Z}"
 }
 
 # Set $__DIR__ variable.
@@ -221,8 +230,7 @@ parse_args2() {
       opt_flag=${BOOLEAN_FLAGS[$i]}
       case $key in
         -$opt_flag*)
-          upcase "${opt_name//-/_}"
-          name_upper=$res
+          get_name_upper "$opt_name"
           printf -v "ARG_$name_upper" 'true'
           found=1
           if [[ $key != -$opt_flag ]]; then
@@ -231,8 +239,7 @@ parse_args2() {
             for flag in ${BOOLEAN_FLAGS[@]}; do
               if [[ -z ${additional_opts##$flag*} ]]; then
                 inner_opt_name="${BOOLEAN_NAMES[$j]}"
-                upcase "${inner_opt_name//-/_}"
-                name_upper=$res
+                get_name_upper "$inner_opt_name"
                 printf -v "ARG_$name_upper" 'true'
                 additional_opts="${additional_opts##$flag}"
               fi
@@ -244,8 +251,7 @@ parse_args2() {
               inner_opt_name="${OPTIONAL_NAMES[$j]}"
               if [[ -z ${additional_opts##*$flag*} ]]; then
                 value="${additional_opts##*$flag}"
-                upcase "${inner_opt_name//-/_}"
-                name_upper=$res
+                get_name_upper "$inner_opt_name"
                 printf -v "ARG_$name_upper" "$value"
               fi
               j=$(($j+1))
@@ -255,8 +261,7 @@ parse_args2() {
               inner_opt_name="${ARRAY_NAMES[$j]}"
               if [[ -z ${additional_opts##*$flag*} ]]; then
                 value="${additional_opts##*$flag}"
-                upcase "${inner_opt_name//-/_}"
-                name_upper=$res
+                get_name_upper "$inner_opt_name"
                 if [[ -z $found_array_arg ]]; then
                   found_array_arg=1
                   unset "ARG_$name_upper"
@@ -269,8 +274,7 @@ parse_args2() {
           shift
           ;;
         --$opt_name)
-          upcase "${opt_name//-/_}"
-          name_upper=$res
+          get_name_upper "$opt_name"
           printf -v "ARG_$name_upper" "true"
           found=1
           shift
@@ -284,8 +288,7 @@ parse_args2() {
       opt_flag="${OPTIONAL_FLAGS[$i]}"
       case $key in
         -$opt_flag*|--$opt_name)
-          upcase "${opt_name//-/_}"
-          name_upper=$res
+          get_name_upper "$opt_name"
           if [[ $key =~ ^-$opt_flag ]]; then
             if [[ $key == -$opt_flag ]]; then
               val="$2"
@@ -309,8 +312,7 @@ parse_args2() {
       opt_flag="${ARRAY_FLAGS[$i]}"
       case $key in
         -$opt_flag*|--$opt_name)
-          upcase "${opt_name//-/_}"
-          name_upper=$res
+          get_name_upper "$opt_name"
           if [[ $key =~ ^-$opt_flag ]]; then
             if [[ $key == -$opt_flag ]]; then
               val="$2"
@@ -344,8 +346,7 @@ parse_args2() {
   for name in "${POSITIONAL_NAMES[@]}"; do
     arg_i="${POSITIONAL[$i]}"
     [[ -z $arg_i ]] && continue
-    upcase "${name//-/_}"
-    name_upper=$res
+    get_name_upper "$name"
     printf -v "ARG_$name_upper" "$arg_i"
     i=$(($i+1))
   done
@@ -382,11 +383,11 @@ print_help() {
     printf "positional arguments:\n"
     i=0
     for p_name in "${POSITIONAL_NAMES[@]}"; do
-      p_disp="$(cprint 3 "$p_name")"
+      cprint 3 "$p_name" --quiet
       j=0
       printf "${POSITIONAL_DESCRIPTIONS[$i]}\n" | while read line; do
         if [[ $j -eq 0 ]]; then
-          printf "  %-37s $line\n" "$p_disp"
+          printf "  %-37b $line\n" $cprint_string
         else
           printf "  %-24s $line\n"
         fi
@@ -400,12 +401,13 @@ print_help() {
     printf "optional arguments:\n"
     i=0
     for opt_name in "${ARRAY_NAMES[@]}"; do
-      flag_disp="$(cprint 3 "-${ARRAY_FLAGS[$i]}")"
-      name_disp="$(cprint 3 "--$opt_name")"
+      cprint 3 "-${ARRAY_FLAGS[$i]}" --quiet
+      flag_disp="$cprint_string"
+      cprint 3 "--$opt_name" --quiet
       j=0
       printf "${ARRAY_DESCRIPTIONS[$i]}\n" | while read line; do
         if [[ $j -eq 0 ]]; then
-          printf "  %-50s $line\n" "$flag_disp, $name_disp"
+          printf "  %-50b $line\n" "$flag_disp, $cprint_string"
         else
           printf "  %-24s $line\n"
         fi
@@ -415,12 +417,13 @@ print_help() {
     done
     i=0
     for opt_name in "${OPTIONAL_NAMES[@]}"; do
-      flag_disp="$(cprint 3 "-${OPTIONAL_FLAGS[$i]}")"
-      name_disp="$(cprint 3 "--$opt_name")"
+      cprint 3 "-${OPTIONAL_FLAGS[$i]}" --quiet
+      flag_disp="$cprint_string"
+      cprint 3 "--$opt_name" --quiet
       j=0
       printf "${OPTIONAL_DESCRIPTIONS[$i]}\n" | while read line; do
         if [[ $j -eq 0 ]]; then
-          printf "  %-50s $line\n" "$flag_disp, $name_disp"
+          printf "  %-50b $line\n" "$flag_disp, $cprint_string"
         else
           printf "  %-24s $line\n"
         fi
@@ -430,12 +433,13 @@ print_help() {
     done
     i=0
     for bool_name in "${BOOLEAN_NAMES[@]}"; do
-      flag_disp="$(cprint 3 "-${BOOLEAN_FLAGS[$i]}")"
-      name_disp="$(cprint 3 "--$bool_name")"
+      cprint 3 "-${BOOLEAN_FLAGS[$i]}" --quiet
+      flag_disp="$cprint_string"
+      cprint 3 "--$bool_name" --quiet
       j=0
       printf "${BOOLEAN_DESCRIPTIONS[$i]}\n" | while read line; do
         if [[ $j -eq 0 ]]; then
-          printf "  %-50s $line\n" "$flag_disp, $name_disp"
+          printf "  %-50b $line\n" "$flag_disp, $cprint_string"
         else
           printf "  %-24s $line\n"
         fi
