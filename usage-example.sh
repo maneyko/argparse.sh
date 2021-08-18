@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source "$(dirname "$0")/argparse.sh"
+source "${0%/*}/argparse.sh"
 
 ARG_NUMBERS=(1 2 3)
 
@@ -28,4 +28,6 @@ outputs:     $ARG_OUTPUTS
 verbose:     $ARG_VERBOSE
 flag:        $ARG_FLAG
 numbers:     ${ARG_NUMBERS[@]}
+
+Script '${0##*/}' is in '$__DIR__'
 EOT

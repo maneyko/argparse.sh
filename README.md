@@ -142,5 +142,7 @@ Functions for parsing arguments:
 Secret variables!
 * `POSITIONAL`
   - Contains positional arguments in an array
+* `__DIR__`
+  - Full path of the directory which contains the script.
 * `print_help`
   - Function to print the help page, automatically done if `-h` flag is present

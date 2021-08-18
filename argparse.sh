@@ -91,6 +91,15 @@ cprint() {
   printf "\033[38;5;${1}m${2}\033[0m"
 }
 
+# Set $__DIR__ variable.
+# The full path of the directory of the script.
+set__dir() {
+  _origin_pwd="$PWD"
+  cd "${0%/*}"
+  __DIR__="$PWD"
+  cd "$_origin_pwd"
+}
+
 # @param arg_options
 parse_arg1() {
   t1="${1%%\]*}"
@@ -168,6 +177,7 @@ arg_help() {
 
 parse_args() {
   parse_args2 "${ARGS_ARR[@]}"
+  set__dir
 }
 
 # @param args_arr
