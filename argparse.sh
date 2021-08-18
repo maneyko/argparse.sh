@@ -91,15 +91,6 @@ cprint() {
   printf "\033[38;5;${1}m${2}\033[0m"
 }
 
-# Set $__DIR__ variable.
-# The full path of the directory of the script.
-set__dir() {
-  _origin_pwd="$PWD"
-  cd "${0%/*}"
-  __DIR__="$PWD"
-  cd "$_origin_pwd"
-}
-
 # @param arg_options
 parse_arg1() {
   t1="${1%%\]*}"
@@ -175,6 +166,44 @@ arg_help() {
   BOOLEAN_DESCRIPTIONS+=('Print this help message.')
 }
 
+upcase() {
+  res="${1//a/A}"
+  res="${res//b/B}"
+  res="${res//c/C}"
+  res="${res//d/D}"
+  res="${res//e/E}"
+  res="${res//f/F}"
+  res="${res//g/G}"
+  res="${res//h/H}"
+  res="${res//i/I}"
+  res="${res//j/J}"
+  res="${res//k/K}"
+  res="${res//l/L}"
+  res="${res//m/M}"
+  res="${res//n/N}"
+  res="${res//o/O}"
+  res="${res//p/P}"
+  res="${res//q/Q}"
+  res="${res//r/R}"
+  res="${res//s/S}"
+  res="${res//t/T}"
+  res="${res//u/U}"
+  res="${res//v/V}"
+  res="${res//w/W}"
+  res="${res//x/X}"
+  res="${res//y/Y}"
+  res="${res//z/Z}"
+}
+
+# Set $__DIR__ variable.
+# The full path of the directory of the script.
+set__dir() {
+  _origin_pwd="$PWD"
+  cd "${0%/*}"
+  __DIR__="$PWD"
+  cd "$_origin_pwd"
+}
+
 parse_args() {
   parse_args2 "${ARGS_ARR[@]}"
   set__dir
@@ -192,7 +221,8 @@ parse_args2() {
       opt_flag=${BOOLEAN_FLAGS[$i]}
       case $key in
         -$opt_flag*)
-          name_upper=$(echo $opt_name | tr '/a-z-/' '/A-Z_/')
+          upcase "${opt_name//-/_}"
+          name_upper=$res
           printf -v "ARG_$name_upper" 'true'
           found=1
           if [[ $key != -$opt_flag ]]; then
@@ -201,7 +231,8 @@ parse_args2() {
             for flag in ${BOOLEAN_FLAGS[@]}; do
               if [[ -z ${additional_opts##$flag*} ]]; then
                 inner_opt_name="${BOOLEAN_NAMES[$j]}"
-                name_upper=$(echo $inner_opt_name | tr '/a-z-/' '/A-Z_/')
+                upcase "${inner_opt_name//-/_}"
+                name_upper=$res
                 printf -v "ARG_$name_upper" 'true'
                 additional_opts="${additional_opts##$flag}"
               fi
@@ -213,7 +244,8 @@ parse_args2() {
               inner_opt_name="${OPTIONAL_NAMES[$j]}"
               if [[ -z ${additional_opts##*$flag*} ]]; then
                 value="${additional_opts##*$flag}"
-                name_upper=$(echo $inner_opt_name | tr '/a-z-/' '/A-Z_/')
+                upcase "${inner_opt_name//-/_}"
+                name_upper=$res
                 printf -v "ARG_$name_upper" "$value"
               fi
               j=$(($j+1))
@@ -223,7 +255,8 @@ parse_args2() {
               inner_opt_name="${ARRAY_NAMES[$j]}"
               if [[ -z ${additional_opts##*$flag*} ]]; then
                 value="${additional_opts##*$flag}"
-                name_upper=$(echo $inner_opt_name | tr '/a-z-/' '/A-Z_/')
+                upcase "${inner_opt_name//-/_}"
+                name_upper=$res
                 if [[ -z $found_array_arg ]]; then
                   found_array_arg=1
                   unset "ARG_$name_upper"
@@ -236,7 +269,8 @@ parse_args2() {
           shift
           ;;
         --$opt_name)
-          name_upper=$(echo $opt_name | tr '/a-z-/' '/A-Z_/')
+          upcase "${opt_name//-/_}"
+          name_upper=$res
           printf -v "ARG_$name_upper" "true"
           found=1
           shift
@@ -250,7 +284,8 @@ parse_args2() {
       opt_flag="${OPTIONAL_FLAGS[$i]}"
       case $key in
         -$opt_flag*|--$opt_name)
-          name_upper=$(echo $opt_name | tr '/a-z-/' '/A-Z_/')
+          upcase "${opt_name//-/_}"
+          name_upper=$res
           if [[ $key =~ ^-$opt_flag ]]; then
             if [[ $key == -$opt_flag ]]; then
               val="$2"
@@ -274,7 +309,8 @@ parse_args2() {
       opt_flag="${ARRAY_FLAGS[$i]}"
       case $key in
         -$opt_flag*|--$opt_name)
-          name_upper=$(echo $opt_name | tr '/a-z-/' '/A-Z_/')
+          upcase "${opt_name//-/_}"
+          name_upper=$res
           if [[ $key =~ ^-$opt_flag ]]; then
             if [[ $key == -$opt_flag ]]; then
               val="$2"
@@ -308,7 +344,8 @@ parse_args2() {
   for name in "${POSITIONAL_NAMES[@]}"; do
     arg_i="${POSITIONAL[$i]}"
     [[ -z $arg_i ]] && continue
-    name_upper=$(echo $name | tr '/a-z-/' '/A-Z_/')
+    upcase "${name//-/_}"
+    name_upper=$res
     printf -v "ARG_$name_upper" "$arg_i"
     i=$(($i+1))
   done
