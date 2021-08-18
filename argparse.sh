@@ -91,22 +91,43 @@ cprint() {
   printf "\033[38;5;${1}m${2}\033[0m"
 }
 
-perl - "${ARGS_ARR[@]}" << 'EOT'
+perl - "${ARGS_ARR[@]}" << EOT
 use Getopt::Long qw(:config default);
 
-my $data   = "file.dat";
-my $length = 24;
-my $verbose;
-GetOptions(
-  "length=i" => \$length,  # numeric
-  "file=s"   => \$data,    # string
-  "verbose"  => \$verbose  # flag
+my %options = (
+  length  => 'i',
+  file    => 's',
+  verbose => ''
 );
 
-print "length: $length\n";
-print "file: $file\n";
-print "verbose: $verbose\n";
+my %args = ( );
+my %opts = ( );
 
-print "@ARGV[1]\n";
-print "In perl\n\n\n";
+for (keys %options) {
+  \$opts{\$_} = '';
+}
+
+for (keys %options) {
+  \$args{\$options{\$_}} => \$opts{\$_};
+}
+
+my %opts = ("length=i" => \\\$length);
+
+GetOptions(%opts);
+
+# GetOptions(\%options);
+
+# GetOptions(
+#   "length=i" => \\\$length,  # numeric
+#   "file=s"   => \\\$data,    # string
+#   "verbose"  => \\\$verbose  # flag
+# );
+
+while ( (\$k,\$v) = each %opts ) {
+    print "\$k => \$v\n";
+}
+
+print "\\n";
+
+print "ARG_LENGTH=\$length; ARG_FILE=\$file; ARG_DATA=\$data; ARG_FLAG=\$flag; ARG_VERBOSE=\$verbose;"
 EOT
