@@ -252,7 +252,7 @@ parse_args2() {
               if [[ -z ${additional_opts##*$flag*} ]]; then
                 value="${additional_opts##*$flag}"
                 get_name_upper "$inner_opt_name"
-                printf -v "ARG_$name_upper" "$value"
+                printf -v "ARG_$name_upper" -- "$value"
               fi
               j=$(($j+1))
             done
@@ -301,7 +301,7 @@ parse_args2() {
             val="$2"
             shift; shift
           fi
-          printf -v "ARG_$name_upper" "$val"
+          printf -v "ARG_$name_upper" -- "$val"
           found=1
           ;;
       esac
@@ -347,7 +347,7 @@ parse_args2() {
     arg_i="${POSITIONAL[$i]}"
     [[ -z $arg_i ]] && continue
     get_name_upper "$name"
-    printf -v "ARG_$name_upper" "$arg_i"
+    printf -v "ARG_$name_upper" -- "$arg_i"
     i=$(($i+1))
   done
 
