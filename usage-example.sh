@@ -16,7 +16,7 @@ arg_positional "[outfile]         [The output file.
   /---/   /
      /   /
     /___/]"
-arg_optional   "[port-number]        [p] [The port number]"
+arg_optional   "[port-number]        [p] [The port number (as a percent %)]"
 arg_optional   "[grep-regex-pattern] [g] [Grep regex pattern to use when searching files. Default: [[space]]+]"
 arg_optional   "[outputs]            [o] [The number of outputs]"
 arg_boolean    "[verbose]            [v] [Do verbose output]"

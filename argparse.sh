@@ -255,7 +255,7 @@ parse_args2() {
             if [[ -z ${additional_opts##*$flag*} ]]; then
               value="${additional_opts#*$flag}"
               get_name_upper "$inner_opt_name"
-              printf -v "ARG_$name_upper" -- "$value"
+              printf -v "ARG_$name_upper" -- "${value//%/%%}"
             fi
             j=$(($j+1))
           done
@@ -269,7 +269,7 @@ parse_args2() {
                 found_array_arg=1
                 unset "ARG_$name_upper"
               fi
-              eval "ARG_$name_upper+=($value)"
+              eval "ARG_$name_upper+=(${value//%/%%})"
             fi
             j=$(($j+1))
           done
@@ -310,7 +310,7 @@ parse_args2() {
       esac
       if [[ -n $found_opt ]]; then
         get_name_upper "$opt_name"
-        printf -v "ARG_$name_upper" -- "$val"
+        printf -v "ARG_$name_upper" -- "${val//%/%%}"
         found=1
       fi
       i=$(($i+1))
@@ -341,7 +341,7 @@ parse_args2() {
           found_array_arg=1
           unset "ARG_$name_upper"
         fi
-        eval "ARG_$name_upper+=($val)"
+        eval "ARG_$name_upper+=(${val//%/%%})"
         found=1
       fi
       i=$(($i+1))
@@ -358,7 +358,7 @@ parse_args2() {
     arg_i="${POSITIONAL[$i]}"
     [[ -z $arg_i ]] && continue
     get_name_upper "$name"
-    printf -v "ARG_$name_upper" -- "$arg_i"
+    printf -v "ARG_$name_upper" -- "${arg_i//%/%%}"
     i=$(($i+1))
   done
 
@@ -393,18 +393,18 @@ print_help() {
     printf "[-$opt_flag $opt_name -$opt_flag ...] "
     i=$(($i+1))
   done
-  printf "\n\n$HELP_DESCRIPTION\n\n"
+  echo -e "\n$HELP_DESCRIPTION\n"
   if [[ -n $POSITIONAL_NAMES ]]; then
     printf "positional arguments:\n"
     i=0
     for p_name in "${POSITIONAL_NAMES[@]}"; do
       cprint 3 "$p_name" --quiet
       j=0
-      printf "${POSITIONAL_DESCRIPTIONS[$i]}\n" | while read; do
+      echo "${POSITIONAL_DESCRIPTIONS[$i]}" | while read; do
         if [[ $j -eq 0 ]]; then
-          printf "  %-${X_POS}b $REPLY\n" $cprint_string
+          printf "  %-${X_POS}b ${REPLY//%/%%}\n" ${cprint_string}
         else
-          printf "  %-${X_OPT_NL}s $REPLY\n"
+          printf "  %-${X_OPT_NL}s ${REPLY//%/%%}\n"
         fi
         j=$(($j+1))
       done
@@ -420,11 +420,11 @@ print_help() {
       flag_disp="$cprint_string"
       cprint 3 "--$opt_name" --quiet
       j=0
-      printf "${ARRAY_DESCRIPTIONS[$i]}\n" | while read; do
+      echo "${ARRAY_DESCRIPTIONS[$i]}" | while read; do
         if [[ $j -eq 0 ]]; then
-          printf "  %-${X_OPT}b $REPLY\n" "$flag_disp, $cprint_string"
+          printf "  %-${X_OPT}b ${REPLY//%/%%}\n" "$flag_disp, $cprint_string"
         else
-          printf "  %-${X_OPT_NL}s $REPLY\n"
+          printf "  %-${X_OPT_NL}s ${REPLY//%/%%}\n"
         fi
         j=$(($j+1))
       done
@@ -436,11 +436,11 @@ print_help() {
       flag_disp="$cprint_string"
       cprint 3 "--$opt_name" --quiet
       j=0
-      printf "${OPTIONAL_DESCRIPTIONS[$i]}\n" | while read; do
+      echo "${OPTIONAL_DESCRIPTIONS[$i]}" | while read; do
         if [[ $j -eq 0 ]]; then
-          printf "  %-${X_OPT}b $REPLY\n" "$flag_disp, $cprint_string"
+          printf "  %-${X_OPT}b ${REPLY//%/%%}\n" "$flag_disp, $cprint_string"
         else
-          printf "  %-${X_OPT_NL}s $REPLY\n"
+          printf "  %-${X_OPT_NL}s ${REPLY//%/%%}\n"
         fi
         j=$(($j+1))
       done
@@ -452,11 +452,11 @@ print_help() {
       flag_disp="$cprint_string"
       cprint 3 "--$bool_name" --quiet
       j=0
-      printf "${BOOLEAN_DESCRIPTIONS[$i]}\n" | while read; do
+      echo "${BOOLEAN_DESCRIPTIONS[$i]}" | while read; do
         if [[ $j -eq 0 ]]; then
-          printf "  %-${X_OPT}b $REPLY\n" "$flag_disp, $cprint_string"
+          printf "  %-${X_OPT}b ${REPLY//%/%%}\n" "$flag_disp, $cprint_string"
         else
-          printf "  %-${X_OPT_NL}s $REPLY\n"
+          printf "  %-${X_OPT_NL}s ${REPLY//%/%%}\n"
         fi
         j=$(($j+1))
       done
