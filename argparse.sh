@@ -358,6 +358,10 @@ parse_args2() {
 }
 
 print_help() {
+  : ${HELP_WIDTH:=30}
+  X_POS=$(($HELP_WIDTH + 10))
+  X_OPT=$(($HELP_WIDTH + 23))
+  X_OPT_NL=$(($HELP_WIDTH - 3))
   bprint "usage:"
   printf "  ${0##*/} "
   for p_name in "${POSITIONAL_NAMES[@]}"; do
@@ -385,11 +389,11 @@ print_help() {
     for p_name in "${POSITIONAL_NAMES[@]}"; do
       cprint 3 "$p_name" --quiet
       j=0
-      printf "${POSITIONAL_DESCRIPTIONS[$i]}\n" | while read line; do
+      printf "${POSITIONAL_DESCRIPTIONS[$i]}\n" | while read; do
         if [[ $j -eq 0 ]]; then
-          printf "  %-37b $line\n" $cprint_string
+          printf "  %-${X_POS}b $REPLY\n" $cprint_string
         else
-          printf "  %-24s $line\n"
+          printf "  %-${X_OPT_NL}s $REPLY\n"
         fi
         j=$(($j+1))
       done
@@ -405,11 +409,11 @@ print_help() {
       flag_disp="$cprint_string"
       cprint 3 "--$opt_name" --quiet
       j=0
-      printf "${ARRAY_DESCRIPTIONS[$i]}\n" | while read line; do
+      printf "${ARRAY_DESCRIPTIONS[$i]}\n" | while read; do
         if [[ $j -eq 0 ]]; then
-          printf "  %-50b $line\n" "$flag_disp, $cprint_string"
+          printf "  %-${X_OPT}b $REPLY\n" "$flag_disp, $cprint_string"
         else
-          printf "  %-24s $line\n"
+          printf "  %-${X_OPT_NL}s $REPLY\n"
         fi
         j=$(($j+1))
       done
@@ -421,11 +425,11 @@ print_help() {
       flag_disp="$cprint_string"
       cprint 3 "--$opt_name" --quiet
       j=0
-      printf "${OPTIONAL_DESCRIPTIONS[$i]}\n" | while read line; do
+      printf "${OPTIONAL_DESCRIPTIONS[$i]}\n" | while read; do
         if [[ $j -eq 0 ]]; then
-          printf "  %-50b $line\n" "$flag_disp, $cprint_string"
+          printf "  %-${X_OPT}b $REPLY\n" "$flag_disp, $cprint_string"
         else
-          printf "  %-24s $line\n"
+          printf "  %-${X_OPT_NL}s $REPLY\n"
         fi
         j=$(($j+1))
       done
@@ -437,11 +441,11 @@ print_help() {
       flag_disp="$cprint_string"
       cprint 3 "--$bool_name" --quiet
       j=0
-      printf "${BOOLEAN_DESCRIPTIONS[$i]}\n" | while read line; do
+      printf "${BOOLEAN_DESCRIPTIONS[$i]}\n" | while read; do
         if [[ $j -eq 0 ]]; then
-          printf "  %-50b $line\n" "$flag_disp, $cprint_string"
+          printf "  %-${X_OPT}b $REPLY\n" "$flag_disp, $cprint_string"
         else
-          printf "  %-24s $line\n"
+          printf "  %-${X_OPT_NL}s $REPLY\n"
         fi
         j=$(($j+1))
       done
