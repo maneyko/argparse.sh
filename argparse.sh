@@ -227,112 +227,123 @@ parse_args2() {
     found=
     i=0
     for opt_name in "${BOOLEAN_NAMES[@]}"; do
+      found_bool=
       opt_flag=${BOOLEAN_FLAGS[$i]}
       case $key in
+        -$opt_flag|--$opt_name)
+          shift
+          found_bool=1
+          ;;
         -$opt_flag*)
-          get_name_upper "$opt_name"
-          printf -v "ARG_$name_upper" 'true'
-          found=1
-          if [[ $key != -$opt_flag ]]; then
-            additional_opts="${key##-${opt_flag}}"
-            j=0
-            for flag in ${BOOLEAN_FLAGS[@]}; do
-              if [[ -z ${additional_opts##$flag*} ]]; then
-                inner_opt_name="${BOOLEAN_NAMES[$j]}"
-                get_name_upper "$inner_opt_name"
-                printf -v "ARG_$name_upper" 'true'
-                additional_opts="${additional_opts##$flag}"
-              fi
-              [[ -z $additional_opts ]] && break
-              j=$(($j+1))
-            done
-            j=0
-            for flag in ${OPTIONAL_FLAGS[@]}; do
-              inner_opt_name="${OPTIONAL_NAMES[$j]}"
-              if [[ -z ${additional_opts##*$flag*} ]]; then
-                value="${additional_opts##*$flag}"
-                get_name_upper "$inner_opt_name"
-                printf -v "ARG_$name_upper" -- "$value"
-              fi
-              j=$(($j+1))
-            done
-            j=0
-            for flag in ${ARRAY_FLAGS[@]}; do
-              inner_opt_name="${ARRAY_NAMES[$j]}"
-              if [[ -z ${additional_opts##*$flag*} ]]; then
-                value="${additional_opts##*$flag}"
-                get_name_upper "$inner_opt_name"
-                if [[ -z $found_array_arg ]]; then
-                  found_array_arg=1
-                  unset "ARG_$name_upper"
-                fi
-                eval "ARG_$name_upper+=($value)"
-              fi
-              j=$(($j+1))
-            done
-          fi
           shift
+          found_bool=1
+          additional_opts="${key#-$opt_flag}"
+          j=0
+          for flag in ${BOOLEAN_FLAGS[@]}; do
+            if [[ -z ${additional_opts##$flag*} ]]; then
+              inner_opt_name="${BOOLEAN_NAMES[$j]}"
+              get_name_upper "$inner_opt_name"
+              printf -v "ARG_$name_upper" 'true'
+              additional_opts="${additional_opts#$flag}"
+            fi
+            [[ -z $additional_opts ]] && break
+            j=$(($j+1))
+          done
+          j=0
+          for flag in ${OPTIONAL_FLAGS[@]}; do
+            inner_opt_name="${OPTIONAL_NAMES[$j]}"
+            if [[ -z ${additional_opts##*$flag*} ]]; then
+              value="${additional_opts#*$flag}"
+              get_name_upper "$inner_opt_name"
+              printf -v "ARG_$name_upper" -- "$value"
+            fi
+            j=$(($j+1))
+          done
+          j=0
+          for flag in ${ARRAY_FLAGS[@]}; do
+            inner_opt_name="${ARRAY_NAMES[$j]}"
+            if [[ -z ${additional_opts##*$flag*} ]]; then
+              value="${additional_opts#*$flag}"
+              get_name_upper "$inner_opt_name"
+              if [[ -z $found_array_arg ]]; then
+                found_array_arg=1
+                unset "ARG_$name_upper"
+              fi
+              eval "ARG_$name_upper+=($value)"
+            fi
+            j=$(($j+1))
+          done
           ;;
-        --$opt_name)
-          get_name_upper "$opt_name"
-          printf -v "ARG_$name_upper" "true"
-          found=1
-          shift
-          ;;
-
       esac
       i=$(($i+1))
+      if [[ -n $found_bool ]]; then
+        get_name_upper "$opt_name"
+        printf -v "ARG_$name_upper" 'true'
+        found=
+      fi
     done
     i=0
     for opt_name in "${OPTIONAL_NAMES[@]}"; do
+      found_opt=
       opt_flag="${OPTIONAL_FLAGS[$i]}"
       case $key in
-        -$opt_flag*|--$opt_name)
-          get_name_upper "$opt_name"
-          if [[ $key =~ ^-$opt_flag ]]; then
-            if [[ $key == -$opt_flag ]]; then
-              val="$2"
-              shift; shift
-            else
-              val="${key/-$opt_flag}"
-              shift
-            fi
-          else
-            val="$2"
-            shift; shift
-          fi
-          printf -v "ARG_$name_upper" -- "$val"
-          found=1
+        -$opt_flag)
+          val="$2"
+          found_opt=1
+          shift; shift
+          ;;
+        -$opt_flag*)
+          val="${key#-$opt_flag}"
+          found_opt=1
+          shift
+          ;;
+        --$opt_name)
+          val="$2"
+          found_opt=1
+          shift; shift
+          ;;
+        --$opt_name=*)
+          val="${key#--$opt_name=}"
+          found_opt=1
+          shift
           ;;
       esac
+      if [[ -n $found_opt ]]; then
+        get_name_upper "$opt_name"
+        printf -v "ARG_$name_upper" -- "$val"
+        found=1
+      fi
       i=$(($i+1))
     done
     i=0
     for opt_name in "${ARRAY_NAMES[@]}"; do
+      found_ary_arg=
       opt_flag="${ARRAY_FLAGS[$i]}"
       case $key in
-        -$opt_flag*|--$opt_name)
-          get_name_upper "$opt_name"
-          if [[ $key =~ ^-$opt_flag ]]; then
-            if [[ $key == -$opt_flag ]]; then
-              val="$2"
-              shift; shift
-            else
-              val="${key/-$opt_flag}"
-              shift
-            fi
-          else
-            val="$2"
-            shift; shift
-          fi
-          if [[ -z $found_array_arg ]]; then
-            found_array_arg=1
-            unset "ARG_$name_upper"
-          fi
-          eval "ARG_$name_upper+=($val)"
-          found=1
+        -$opt_flag)
+          val="$2"
+          found_ary_arg=1
+          shift; shift
+          ;;
+        -$opt_flag*)
+          val="${key#-$opt_flag}"
+          found_ary_arg=1
+          shift
+          ;;
+        --$opt_name)
+          val="$2"
+          found_ary_arg=1
+          shift; shift
           ;;
       esac
+      if [[ -n $found_ary_arg ]]; then
+        if [[ -z $found_array_arg ]]; then
+          found_array_arg=1
+          unset "ARG_$name_upper"
+        fi
+        eval "ARG_$name_upper+=($val)"
+        found=1
+      fi
       i=$(($i+1))
     done
     if [[ -z $found ]]; then

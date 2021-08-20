@@ -4,7 +4,7 @@ source "${0%/*}/argparse.sh"
 
 ARG_NUMBERS=(1 2 3)
 
-HELP_WIDTH=40
+: ${HELP_WIDTH:=35}
 
 arg_positional "[infile]          [The file to parse]"
 arg_positional "[outfile]         [The output file.
@@ -16,15 +16,12 @@ arg_positional "[outfile]         [The output file.
   /---/   /
      /   /
     /___/]"
-arg_optional   "[port-number] [p] [The port number]"
-arg_optional   "[this-argument-is-super-long] [t] [Super long argument.]"
-arg_optional   "[outputs]     [o] [The number of outputs
-it
-has
-lines]"
-arg_boolean    "[verbose]     [v] [Do verbose output]"
-arg_boolean    "[flag]        [f] [My important flag]"
-arg_array      "[numbers]     [n] [Numbers to add together. Default is: [${ARG_NUMBERS[@]}]]"
+arg_optional   "[port-number]        [p] [The port number]"
+arg_optional   "[grep-regex-pattern] [g] [Grep regex pattern to use when searching files. Default: [[space]]+]"
+arg_optional   "[outputs]            [o] [The number of outputs]"
+arg_boolean    "[verbose]            [v] [Do verbose output]"
+arg_boolean    "[flag]               [f] [My important flag]"
+arg_array      "[numbers]            [n] [Numbers to add together. Default is: [${ARG_NUMBERS[@]}]]"
 
 read -d '' helptxt << EOT
 This file illustrates how argparse.sh can be used
