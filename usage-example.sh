@@ -4,6 +4,8 @@ source "${0%/*}/argparse.sh"
 
 ARG_NUMBERS=(1 2 3)
 
+HELP_WIDTH=40
+
 arg_positional "[infile]          [The file to parse]"
 arg_positional "[outfile]         [The output file.
     The following image will be output to the specified file:
