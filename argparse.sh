@@ -82,23 +82,17 @@ HELP_DESCRIPTION=
 # @param text [String]
 # @param args [String]
 bprint() {
-  bprint_string="\033[1m$1\033[0m"
-  if [[ "$2" != --quiet ]]; then
-    printf "$bprint_string"
-  fi
+  printf "\033[1m$1\033[0m"
 }
 
 # Color print.
 #
 # @param number [Integer]
 # @param text   [String]
-# @param args   [String]
 cprint() {
-  cprint_string="\033[38;5;${1}m${2}\033[0m"
-  if [[ "$3" != --quiet ]]; then
-    printf "$cprint_string"
-  fi
+  printf "\033[38;5;$1m$2\033[0m"
 }
+cprint_q() { cprint_string="\033[38;5;$1m$2\033[0m"; }
 
 # @param arg_options
 parse_arg1() {
@@ -237,38 +231,35 @@ parse_args2() {
           found_bool=1
           shift
           additional_opts="${key#-$opt_flag}"
-          for (( j=0; i < ${#OPTIONAL_FLAGS[@]}; j++ )); do
+          for (( j=0; j < ${#OPTIONAL_FLAGS[@]}; j++ )); do
             [[ -z $additional_opts ]] && break
             bundled_flag=${OPTIONAL_FLAGS[$j]}
-            if [[ $additional_opts == *$bundled_flag* ]]; then
-              value="${additional_opts##*$bundled_flag}"
-              get_name_upper "${OPTIONAL_NAMES[$j]}"
-              printf -v "ARG_$name_upper" -- "${value//%/%%}"
-              additional_opts="${additional_opts%$bundled_flag*}"
-            fi
+            [[ $additional_opts != *$bundled_flag* ]] && continue
+            value="${additional_opts##*$bundled_flag}"
+            get_name_upper "${OPTIONAL_NAMES[$j]}"
+            printf -v "ARG_$name_upper" -- "${value//%/%%}"
+            additional_opts="${additional_opts%%$bundled_flag*}"
           done
           for (( j=0; j < ${#ARRAY_FLAGS[@]}; j++ )); do
             [[ -z $additional_opts ]] && break
             bundled_flag="${ARRAY_FLAGS[$j]}"
-            if [[ $additional_opts == *$bundled_flag* ]]; then
-              value="${additional_opts##*$bundled_flag}"
-              get_name_upper "${ARRAY_NAMES[$j]}"
-              additional_opts="${additional_opts%$bundled_flag*}"
-              if [[ -z $found_array_arg ]]; then
-                found_array_arg=1
-                unset "ARG_$name_upper"
-              fi
-              eval "ARG_$name_upper+=(${value//%/%%})"
+            [[ $additional_opts != *$bundled_flag* ]] && continue
+            value="${additional_opts##*$bundled_flag}"
+            get_name_upper "${ARRAY_NAMES[$j]}"
+            additional_opts="${additional_opts%%$bundled_flag*}"
+            if [[ -z $found_any_array_arg ]]; then
+              found_any_array_arg=1
+              unset "ARG_$name_upper"
             fi
+            eval "ARG_$name_upper+=('$value')"
           done
           for (( j=0; j < ${#BOOLEAN_FLAGS[@]}; j++ )); do
             [[ -z $additional_opts ]] && break
             bundled_flag=${BOOLEAN_FLAGS[$j]}
-            if [[ $additional_opts == *$bundled_flag* ]]; then
-              get_name_upper "${BOOLEAN_NAMES[$j]}"
-              printf -v "ARG_$name_upper" 'true'
-              additional_opts="${additional_opts/$bundled_flag/}"
-            fi
+            [[ $additional_opts != *$bundled_flag* ]] && continue
+            get_name_upper "${BOOLEAN_NAMES[$j]}"
+            printf -v "ARG_$name_upper" 'true'
+            additional_opts="${additional_opts%%$bundled_flag*}"
           done
           ;;
       esac
@@ -342,7 +333,7 @@ parse_args2() {
           found_any_array_arg=1
           unset "ARG_$name_upper"
         fi
-        eval "ARG_$name_upper+=(${val//%/%%})"
+        eval "ARG_$name_upper+=('$val')"
         found_arg=1
       fi
     done
@@ -391,7 +382,7 @@ print_help() {
   if [[ -n $POSITIONAL_NAMES ]]; then
     printf "positional arguments:\n"
     for (( i=0; i < ${#POSITIONAL_NAMES[@]}; i++ )); do
-      cprint 3 "${POSITIONAL_NAMES[$i]}" --quiet
+      cprint_q 3 "${POSITIONAL_NAMES[$i]}"
       j=0
       echo "${POSITIONAL_DESCRIPTIONS[$i]}" | while read; do
         if [[ $j -eq 0 ]]; then
@@ -399,7 +390,7 @@ print_help() {
         else
           printf "  %-${X_OPT_NL}s ${REPLY//%/%%}\n"
         fi
-        j=$(($j+1))
+        ((j++))
       done
     done
   fi
@@ -407,9 +398,9 @@ print_help() {
   [[ -n $POSITIONAL_NAMES ]] && printf "\n"
   printf "optional arguments:\n"
   for (( i=0; i < ${#BOOLEAN_FLAGS[@]}; i++ )); do
-    cprint 3 "-${BOOLEAN_FLAGS[$i]}" --quiet
+    cprint_q 3 "-${BOOLEAN_FLAGS[$i]}"
     flag_disp="$cprint_string"
-    cprint 3 "--${BOOLEAN_NAMES[$i]}" --quiet
+    cprint_q 3 "--${BOOLEAN_NAMES[$i]}"
     j=0
     echo "${BOOLEAN_DESCRIPTIONS[$i]}" | while read; do
       if [[ $j -eq 0 ]]; then
@@ -417,13 +408,13 @@ print_help() {
       else
         printf "  %-${X_OPT_NL}s ${REPLY//%/%%}\n"
       fi
-      j=$(($j+1))
+      ((j++))
     done
   done
   for (( i=0; i < ${#OPTIONAL_FLAGS[@]}; i++ )); do
-    cprint 3 "-${OPTIONAL_FLAGS[$i]}" --quiet
+    cprint_q 3 "-${OPTIONAL_FLAGS[$i]}"
     flag_disp="$cprint_string"
-    cprint 3 "--${OPTIONAL_NAMES[$i]}" --quiet
+    cprint_q 3 "--${OPTIONAL_NAMES[$i]}"
     j=0
     echo "${OPTIONAL_DESCRIPTIONS[$i]}" | while read; do
       if [[ $j -eq 0 ]]; then
@@ -431,13 +422,13 @@ print_help() {
       else
         printf "  %-${X_OPT_NL}s ${REPLY//%/%%}\n"
       fi
-      j=$(($j+1))
+      ((j++))
     done
   done
   for (( i=0; i < ${#ARRAY_FLAGS[@]}; i++ )); do
-    cprint 3 "-${ARRAY_FLAGS[$i]}" --quiet
+    cprint_q 3 "-${ARRAY_FLAGS[$i]}"
     flag_disp="$cprint_string"
-    cprint 3 "--${ARRAY_NAMES[$i]}" --quiet
+    cprint_q 3 "--${ARRAY_NAMES[$i]}"
     j=0
     echo "${ARRAY_DESCRIPTIONS[$i]}" | while read; do
       if [[ $j -eq 0 ]]; then
@@ -445,7 +436,7 @@ print_help() {
       else
         printf "  %-${X_OPT_NL}s ${REPLY//%/%%}\n"
       fi
-      j=$(($j+1))
+      ((j++))
     done
   done
 }
