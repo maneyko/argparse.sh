@@ -2,19 +2,24 @@
 
 source "${0%/*}/argparse.sh"
 
-arg_help    "[Perform speed tests on 'argparse.sh' using the 'usage-example.sh' script.]"
-arg_boolean "[full]  [f] [Test the '-h' flag to 'usage-example.sh' script.]"
+ARG_N_ITERATIONS=1000
+
+arg_help     "[Perform speed tests on 'argparse.sh' using the 'usage-example.sh' script.]"
+arg_optional "[n-iterations] [n] [Number of iterations to perform. Default: '$ARG_N_ITERATIONS']"
+arg_boolean  "[full]         [f] [Run full test suite.]"
 parse_args
 
-echo "Speed test for processing several flags ..."
+N=$ARG_N_ITERATIONS
+
+echo "Speed test for processing several flags (N = $N) ..."
 cmd="./usage-example.sh -n1 -n 2 infile.txt --numbers '-29' outfile.txt -fo4 -vp2060"
-time for i in {1..1000}; do
+time for (( i=0; i < $N; i++ )); do
   $cmd >/dev/null
 done
 
 if [[ -n $ARG_FULL ]]; then
-  echo "Speed test for help message ..."
-  time for i in {1..1000}; do
+  echo -e "\nSpeed test for help message (N = $N) ..."
+  time for (( i=0; i < $N; i++ )); do
     ./usage-example.sh -h >/dev/null
   done
 fi
