@@ -225,67 +225,64 @@ parse_args2() {
   while [[ $# -gt 0 ]]; do
     key=$1
     found=
-    i=0
-    for opt_name in "${BOOLEAN_NAMES[@]}"; do
+    for (( i=0; i < ${#BOOLEAN_FLAGS[@]}; i++ )); do
       found_bool=
       opt_flag=${BOOLEAN_FLAGS[$i]}
+      opt_name=${BOOLEAN_NAMES[$i]}
       case $key in
         -$opt_flag|--$opt_name)
-          shift
           found_bool=1
+          shift
           ;;
         -$opt_flag*)
-          shift
           found_bool=1
+          shift
           additional_opts="${key#-$opt_flag}"
-          j=0
-          for flag in ${BOOLEAN_FLAGS[@]}; do
-            if [[ -z ${additional_opts##$flag*} ]]; then
-              inner_opt_name="${BOOLEAN_NAMES[$j]}"
-              get_name_upper "$inner_opt_name"
-              printf -v "ARG_$name_upper" 'true'
-              additional_opts="${additional_opts#$flag}"
-            fi
+          for (( j=0; i < ${#OPTIONAL_FLAGS[@]}; j++ )); do
             [[ -z $additional_opts ]] && break
-            j=$(($j+1))
-          done
-          j=0
-          for flag in ${OPTIONAL_FLAGS[@]}; do
-            inner_opt_name="${OPTIONAL_NAMES[$j]}"
-            if [[ -z ${additional_opts##*$flag*} ]]; then
-              value="${additional_opts#*$flag}"
-              get_name_upper "$inner_opt_name"
+            bundled_flag=${OPTIONAL_FLAGS[$j]}
+            if [[ $additional_opts == *$bundled_flag* ]]; then
+              value="${additional_opts##*$bundled_flag}"
+              get_name_upper "${OPTIONAL_NAMES[$j]}"
               printf -v "ARG_$name_upper" -- "${value//%/%%}"
+              additional_opts="${additional_opts%$bundled_flag*}"
             fi
-            j=$(($j+1))
           done
-          j=0
-          for flag in ${ARRAY_FLAGS[@]}; do
-            inner_opt_name="${ARRAY_NAMES[$j]}"
-            if [[ -z ${additional_opts##*$flag*} ]]; then
-              value="${additional_opts#*$flag}"
-              get_name_upper "$inner_opt_name"
+          for (( j=0; j < ${#ARRAY_FLAGS[@]}; j++ )); do
+            [[ -z $additional_opts ]] && break
+            bundled_flag="${ARRAY_FLAGS[$j]}"
+            if [[ $additional_opts == *$bundled_flag* ]]; then
+              value="${additional_opts##*$bundled_flag}"
+              get_name_upper "${ARRAY_NAMES[$j]}"
+              additional_opts="${additional_opts%$bundled_flag*}"
               if [[ -z $found_array_arg ]]; then
                 found_array_arg=1
                 unset "ARG_$name_upper"
               fi
               eval "ARG_$name_upper+=(${value//%/%%})"
             fi
-            j=$(($j+1))
+          done
+          for (( j=0; j < ${#BOOLEAN_FLAGS[@]}; j++ )); do
+            [[ -z $additional_opts ]] && break
+            bundled_flag=${BOOLEAN_FLAGS[$j]}
+            if [[ $additional_opts == *$bundled_flag* ]]; then
+              get_name_upper "${BOOLEAN_NAMES[$j]}"
+              printf -v "ARG_$name_upper" 'true'
+              additional_opts="${additional_opts/$bundled_flag/}"
+            fi
           done
           ;;
       esac
-      i=$(($i+1))
       if [[ -n $found_bool ]]; then
         get_name_upper "$opt_name"
         printf -v "ARG_$name_upper" 'true'
-        found=
+        found=1
       fi
     done
-    i=0
-    for opt_name in "${OPTIONAL_NAMES[@]}"; do
+    for (( i=0; i < ${#OPTIONAL_FLAGS[@]}; i++ )); do
       found_opt=
-      opt_flag="${OPTIONAL_FLAGS[$i]}"
+      opt_flag=${OPTIONAL_FLAGS[$i]}
+      opt_name=${OPTIONAL_NAMES[$i]}
       case $key in
         -$opt_flag)
           val="$2"
@@ -313,30 +310,35 @@ parse_args2() {
         printf -v "ARG_$name_upper" -- "${val//%/%%}"
         found=1
       fi
-      i=$(($i+1))
     done
-    i=0
-    for opt_name in "${ARRAY_NAMES[@]}"; do
+    for (( i=0; i < ${#ARRAY_NAMES[@]}; i++ )); do
       found_ary_arg=
-      opt_flag="${ARRAY_FLAGS[$i]}"
+      opt_flag=${ARRAY_FLAGS[$i]}
+      opt_name=${ARRAY_NAMES[$i]}
       case $key in
         -$opt_flag)
-          val="$2"
           found_ary_arg=1
+          val="$2"
           shift; shift
           ;;
         -$opt_flag*)
-          val="${key#-$opt_flag}"
           found_ary_arg=1
+          val="${key#-$opt_flag}"
           shift
           ;;
         --$opt_name)
-          val="$2"
           found_ary_arg=1
+          val="$2"
           shift; shift
+          ;;
+        --$opt_name=*)
+          found_ary_arg=1
+          val="${key#--$opt_name=}"
+          shift
           ;;
       esac
       if [[ -n $found_ary_arg ]]; then
+        get_name_upper "$opt_name"
         if [[ -z $found_array_arg ]]; then
           found_array_arg=1
           unset "ARG_$name_upper"
@@ -344,7 +346,6 @@ parse_args2() {
         eval "ARG_$name_upper+=(${val//%/%%})"
         found=1
       fi
-      i=$(($i+1))
     done
     if [[ -z $found ]]; then
       POSITIONAL+=("$1")
@@ -353,13 +354,12 @@ parse_args2() {
   done
   set -- "${POSITIONAL[@]}"
 
-  i=0
-  for name in "${POSITIONAL_NAMES[@]}"; do
-    arg_i="${POSITIONAL[$i]}"
-    [[ -z $arg_i ]] && continue
-    get_name_upper "$name"
-    printf -v "ARG_$name_upper" -- "${arg_i//%/%%}"
-    i=$(($i+1))
+  for (( i=0; i < ${#POSITIONAL[@]}; i++ )); do
+    pos_val=${POSITIONAL[$i]}
+    pos_name=${POSITIONAL_NAMES[$i]}
+    [[ -z $pos_val ]] && continue
+    get_name_upper "$pos_name"
+    printf -v "ARG_$name_upper" -- "${pos_val//%/%%}"
   done
 
   if [[ -n $ARG_HELP ]]; then
@@ -381,24 +381,18 @@ print_help() {
   for bool_flag in "${BOOLEAN_FLAGS[@]}"; do
     printf "[-$bool_flag] "
   done
-  i=0
-  for opt_name in "${OPTIONAL_NAMES[@]}"; do
-    opt_flag="${OPTIONAL_FLAGS[$i]}"
-    printf "[-$opt_flag $opt_name] "
-    i=$(($i+1))
+  for (( i=0; i < ${#OPTIONAL_FLAGS[@]}; i++ )); do
+    printf "[-${OPTIONAL_FLAGS[$i]} ${OPTIONAL_NAMES[$i]}] "
   done
-  i=0
-  for opt_name in "${ARRAY_NAMES[@]}"; do
+  for (( i=0; i < ${#ARRAY_FLAGS[@]}; i++ )); do
     opt_flag="${ARRAY_FLAGS[$i]}"
-    printf "[-$opt_flag $opt_name -$opt_flag ...] "
-    i=$(($i+1))
+    printf "[-$opt_flag ${ARRAY_NAMES[$i]} -$opt_flag ...] "
   done
   echo -e "\n$HELP_DESCRIPTION\n"
   if [[ -n $POSITIONAL_NAMES ]]; then
     printf "positional arguments:\n"
-    i=0
-    for p_name in "${POSITIONAL_NAMES[@]}"; do
-      cprint 3 "$p_name" --quiet
+    for (( i=0; i < ${#POSITIONAL_NAMES[@]}; i++ )); do
+      cprint 3 "${POSITIONAL_NAMES[$i]}" --quiet
       j=0
       echo "${POSITIONAL_DESCRIPTIONS[$i]}" | while read; do
         if [[ $j -eq 0 ]]; then
@@ -408,59 +402,51 @@ print_help() {
         fi
         j=$(($j+1))
       done
-      i=$(($i+1))
     done
   fi
-  if [[ -n $OPTIONAL_NAMES || -n $BOOLEAN_NAMES || -n $ARRAY_NAMES ]]; then
-    [[ -n $POSITIONAL_NAMES ]] && printf "\n"
-    printf "optional arguments:\n"
-    i=0
-    for opt_name in "${ARRAY_NAMES[@]}"; do
-      cprint 3 "-${ARRAY_FLAGS[$i]}" --quiet
-      flag_disp="$cprint_string"
-      cprint 3 "--$opt_name" --quiet
-      j=0
-      echo "${ARRAY_DESCRIPTIONS[$i]}" | while read; do
-        if [[ $j -eq 0 ]]; then
-          printf "  %-${X_OPT}b ${REPLY//%/%%}\n" "$flag_disp, $cprint_string"
-        else
-          printf "  %-${X_OPT_NL}s ${REPLY//%/%%}\n"
-        fi
-        j=$(($j+1))
-      done
-      i=$(($i+1))
+  [[ -z $BOOLEAN_NAMES && -z $OPTIONAL_NAMES && -z $ARRAY_NAMES ]] && return 0
+  [[ -n $POSITIONAL_NAMES ]] && printf "\n"
+  printf "optional arguments:\n"
+  for (( i=0; i < ${#BOOLEAN_FLAGS[@]}; i++ )); do
+    cprint 3 "-${BOOLEAN_FLAGS[$i]}" --quiet
+    flag_disp="$cprint_string"
+    cprint 3 "--${BOOLEAN_NAMES[$i]}" --quiet
+    j=0
+    echo "${BOOLEAN_DESCRIPTIONS[$i]}" | while read; do
+      if [[ $j -eq 0 ]]; then
+        printf "  %-${X_OPT}b ${REPLY//%/%%}\n" "$flag_disp, $cprint_string"
+      else
+        printf "  %-${X_OPT_NL}s ${REPLY//%/%%}\n"
+      fi
+      j=$(($j+1))
     done
-    i=0
-    for opt_name in "${OPTIONAL_NAMES[@]}"; do
-      cprint 3 "-${OPTIONAL_FLAGS[$i]}" --quiet
-      flag_disp="$cprint_string"
-      cprint 3 "--$opt_name" --quiet
-      j=0
-      echo "${OPTIONAL_DESCRIPTIONS[$i]}" | while read; do
-        if [[ $j -eq 0 ]]; then
-          printf "  %-${X_OPT}b ${REPLY//%/%%}\n" "$flag_disp, $cprint_string"
-        else
-          printf "  %-${X_OPT_NL}s ${REPLY//%/%%}\n"
-        fi
-        j=$(($j+1))
-      done
-      i=$(($i+1))
+  done
+  for (( i=0; i < ${#OPTIONAL_FLAGS[@]}; i++ )); do
+    cprint 3 "-${OPTIONAL_FLAGS[$i]}" --quiet
+    flag_disp="$cprint_string"
+    cprint 3 "--${OPTIONAL_NAMES[$i]}" --quiet
+    j=0
+    echo "${OPTIONAL_DESCRIPTIONS[$i]}" | while read; do
+      if [[ $j -eq 0 ]]; then
+        printf "  %-${X_OPT}b ${REPLY//%/%%}\n" "$flag_disp, $cprint_string"
+      else
+        printf "  %-${X_OPT_NL}s ${REPLY//%/%%}\n"
+      fi
+      j=$(($j+1))
     done
-    i=0
-    for bool_name in "${BOOLEAN_NAMES[@]}"; do
-      cprint 3 "-${BOOLEAN_FLAGS[$i]}" --quiet
-      flag_disp="$cprint_string"
-      cprint 3 "--$bool_name" --quiet
-      j=0
-      echo "${BOOLEAN_DESCRIPTIONS[$i]}" | while read; do
-        if [[ $j -eq 0 ]]; then
-          printf "  %-${X_OPT}b ${REPLY//%/%%}\n" "$flag_disp, $cprint_string"
-        else
-          printf "  %-${X_OPT_NL}s ${REPLY//%/%%}\n"
-        fi
-        j=$(($j+1))
-      done
-      i=$(($i+1))
+  done
+  for (( i=0; i < ${#ARRAY_FLAGS[@]}; i++ )); do
+    cprint 3 "-${ARRAY_FLAGS[$i]}" --quiet
+    flag_disp="$cprint_string"
+    cprint 3 "--${ARRAY_NAMES[$i]}" --quiet
+    j=0
+    echo "${ARRAY_DESCRIPTIONS[$i]}" | while read; do
+      if [[ $j -eq 0 ]]; then
+        printf "  %-${X_OPT}b ${REPLY//%/%%}\n" "$flag_disp, $cprint_string"
+      else
+        printf "  %-${X_OPT_NL}s ${REPLY//%/%%}\n"
+      fi
+      j=$(($j+1))
     done
-  fi
+  done
 }
