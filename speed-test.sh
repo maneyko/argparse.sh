@@ -8,13 +8,13 @@ parse_args
 
 echo "Speed test for processing several flags ..."
 cmd="./usage-example.sh -n1 -n 2 infile.txt --numbers '-29' outfile.txt -fo4 -vp2060"
-time for i in {1..500}; do
+time for i in {1..1000}; do
   $cmd >/dev/null
 done
 
 if [[ -n $ARG_FULL ]]; then
   echo "Speed test for help message ..."
-  time for i in {1..500}; do
+  time for i in {1..1000}; do
     ./usage-example.sh -h >/dev/null
   done
 fi

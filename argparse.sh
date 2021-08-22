@@ -59,6 +59,7 @@
 
 ARGS_ARR=("$@")
 
+POSITIONAL=()
 POSITIONAL_NAMES=()
 POSITIONAL_DESCRIPTIONS=()
 
@@ -220,11 +221,9 @@ parse_args() {
 
 # @param args_arr
 parse_args2() {
-  POSITIONAL=()
-  found_array_arg=
   while [[ $# -gt 0 ]]; do
     key=$1
-    found=
+    found_arg=
     for (( i=0; i < ${#BOOLEAN_FLAGS[@]}; i++ )); do
       found_bool=
       opt_flag=${BOOLEAN_FLAGS[$i]}
@@ -274,9 +273,9 @@ parse_args2() {
           ;;
       esac
       if [[ -n $found_bool ]]; then
+        found_arg=1
         get_name_upper "$opt_name"
         printf -v "ARG_$name_upper" 'true'
-        found=1
       fi
     done
     for (( i=0; i < ${#OPTIONAL_FLAGS[@]}; i++ )); do
@@ -285,69 +284,69 @@ parse_args2() {
       opt_name=${OPTIONAL_NAMES[$i]}
       case $key in
         -$opt_flag)
-          val="$2"
           found_opt=1
+          val="$2"
           shift; shift
           ;;
         -$opt_flag*)
-          val="${key#-$opt_flag}"
           found_opt=1
+          val="${key#-$opt_flag}"
           shift
           ;;
         --$opt_name)
-          val="$2"
           found_opt=1
+          val="$2"
           shift; shift
           ;;
         --$opt_name=*)
-          val="${key#--$opt_name=}"
           found_opt=1
+          val="${key#--$opt_name=}"
           shift
           ;;
       esac
       if [[ -n $found_opt ]]; then
+        found_arg=1
         get_name_upper "$opt_name"
         printf -v "ARG_$name_upper" -- "${val//%/%%}"
-        found=1
       fi
     done
     for (( i=0; i < ${#ARRAY_NAMES[@]}; i++ )); do
-      found_ary_arg=
+      found_array_arg=
       opt_flag=${ARRAY_FLAGS[$i]}
       opt_name=${ARRAY_NAMES[$i]}
       case $key in
         -$opt_flag)
-          found_ary_arg=1
+          found_array_arg=1
           val="$2"
           shift; shift
           ;;
         -$opt_flag*)
-          found_ary_arg=1
+          found_array_arg=1
           val="${key#-$opt_flag}"
           shift
           ;;
         --$opt_name)
-          found_ary_arg=1
+          found_array_arg=1
           val="$2"
           shift; shift
           ;;
         --$opt_name=*)
-          found_ary_arg=1
+          found_array_arg=1
           val="${key#--$opt_name=}"
           shift
           ;;
       esac
-      if [[ -n $found_ary_arg ]]; then
+      if [[ -n $found_array_arg ]]; then
         get_name_upper "$opt_name"
-        if [[ -z $found_array_arg ]]; then
-          found_array_arg=1
+        if [[ -z $found_any_array_arg ]]; then
+          found_any_array_arg=1
           unset "ARG_$name_upper"
         fi
         eval "ARG_$name_upper+=(${val//%/%%})"
-        found=1
+        found_arg=1
       fi
     done
-    if [[ -z $found ]]; then
+    if [[ -z $found_arg ]]; then
       POSITIONAL+=("$1")
       shift
     fi
