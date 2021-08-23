@@ -4,58 +4,125 @@
 #
 # https://github.com/maneyko/argparse.sh
 #
-# Place this file in your $PATH and source it using:
-#     source "argparse.sh"
+# Place this file in your `$PATH' and source it at the top of your script using:
+#
+#       source "argparse.sh"
 #
 # Or if argparse.sh is in the same directory as your script, you may use:
-#     source "$(dirname "$0")/argparse.sh"
 #
-# Add it to the top of your script as if it is a library you are using in a programming
-# language such as Python.
+#       source "$(dirname "$0")/argparse.sh"
+#
+#
+# Example of user calling your script from the command line:
+#
+#       ./process_file.sh input-data.txt -v --delimiter=',' --columns='$1, $2'
+#
+# Example usage from your script:
+#
+#       #!/bin/bash
+#
+#       source "$(dirname "$0")/argparse.sh"
+#
+#       # Default values for some arguments:
+#       ARG_COLUMNS='$1, $2, $3'
+#       ARG_DELIMITER=','
+#
+#       arg_positional "[input-file]    [Input text file to process]"
+#       arg_boolean    "[verbose]   [v] [Print information about operations being performed]"
+#       arg_optional   "[delimiter] [d] [Delimiter which splits columns in the input file.]"
+#       arg_optional   "[columns]   [c] [Only print certain numbered columns. Passed directly to awk script. Default are '$ARG_COLUMNS'.]"
+#       arg_help       "[This script is for processing a text file]"
+#       parse_args
+#
+#       echo $ARG_INFILE
+#       # => input-data.txt
+#
+#       echo $ARG_DELIMITER
+#       # => ,
+#
+#       echo $ARG_VERBOSE
+#       # => true
+#
+#       echo $ARG_COLUMNS
+#       # => $1, $2
+#
+#       if [ -n "$ARG_VERBOSE" ]; then
+#        echo 'Beginning processing...'
+#       fi
+#
+#       awk -F "$ARG_DELIMITER" "{print $ARG_COLUMNS}" "$ARG_INPUT_FILE"
+#
 #
 # The functions the user can use when sourcing this file in their script are:
 #
 # * arg_positional
 #   - This parses positional arguments to your script
+#   - The value will be accessible to you via `$ARG_INFILE' after calling `parse_args'.
 #   - Usage example: arg_positional "[infile] [The input file]"
 #   - CLI example: ./myscript.sh myfile.txt
-#     The value will be accessible to you via `$ARG_INFILE` after calling `parse_args`.
 #
 # * arg_optional
 #   - This parses optional flags that take a corresponding value
+#   - The value will be accessible to you via `$ARG_PORT' after calling `parse_args'.
+#     If the flag is not used, the variable `$ARG_PORT' will not be set.
 #   - Usage example: arg_optional "[port] [p] [The port to use]"
-#   - CLI example: ./myscript.sh --port 8080
-#     The value will be accessible to you via `$ARG_PORT` after calling `parse_args`.
-#     If the flag is not used, the variable `$ARG_PORT` will not be set.
-#   - CLI example: ./myscript.sh -p8080
-#     Notice there is no space between the flag and the variable, argparse.sh will parse
-#     this correctly and `$ARG_PORT` will be set to 8080.
+#   - CLI examples:
+#     * ./myscript.sh --port 8080
+#     * ./myscript.sh --port=8080
+#     * ./myscript.sh -p8080
 #
 # * arg_boolean
-#   - This parses optional flags thats corresponding variable is set to "true".
+#   - This parses optional flags thats corresponding variable is set to `true'.
+#   - The value will be accessible to you via `$ARG_VERBOSE' after calling `parse_args'.
+#     If the flag is not used, the variable `$ARG_VERBOSE' will not be set.
 #   - Usage example: arg_boolean "[verbose] [v] [Do verbose output]"
 #   - CLI example: ./myscript.sh -v
-#     The value will be accessible to you via `$ARG_VERBOSE` after calling `parse_args`.
-#     If the flag is not used, the variable `$ARG_VERBOSE` will not be set.
 #
 # * arg_array
 #   - This parses any number of the same flag and stores the values in an array
 #   - Usage example: arg_array "[numbers] [n] [Numbers to add together.]"
-#   - CLI example: ./myscript.sh -n2 --numbers 12 -n4 --numbers 29
-#     The value will be accessible to you via `$ARG_NUMBERS` after calling `parse_args`.
-#     You may access the fourth value by calling "${ARG_NUMBERS[3]}".
-#     In this example "${ARG_NUMBERS[3]}" is 29.
-#     If the flag is not used, the variable `$ARG_NUMBERS` will not be set.
+#   - CLI example: ./myscript.sh -n2 --numbers 12 -n4 --numbers=29
+#   - The value will be accessible to you via `$ARG_NUMBERS' after calling `parse_args'.
+#     You may access the fourth value by calling `${ARG_NUMBERS[3]}'.
+#     In this example `${ARG_NUMBERS[3]}' is `29'.
+#     If the flag is not used, the variable `$ARG_NUMBERS' will not be set.
 #
 # * arg_help
-#   - This is optional and will add the '-h' and '--help' flags as arguments to your script.
+#   - This is optional and will add the `-h' and `--help' flags as arguments to your script.
 #   - Usage example: arg_help "[My custom help message]"
 #   - CLI example: ./myscript.sh -h
 #     All the commands you registered with argparse.sh will be printed to the console in a smart way.
 #
 # * parse_args
 #   - This is a required step and must be run after registering all your variables with argparse.sh.
+#
+#
+# Other methods and variables that will become available to you:
+#
+# * `$__DIR__'
+#   - Full (expanded) path of the directory your script is located
+#
+# * bprint
+#   - Print the text as bold, without a trailing newline
+#   - Example: bprint "Important!!"
+#
+# * cprint
+#   - Print the text as 8-bit color, without a trailing newline
+#   - Example: cprint 1 "ERROR"  # Prints 'ERROR' as red
+#
+# * `${POSITIONAL[@]}'
+#   - Array of additional positional arguments not parsed by argparse.sh
 
+
+if [[ ${BASH_VERSINFO[0]} -le 2 ]]; then
+  echo 'WARN: argparse.sh is not supported for Bash 2.x or lower.'
+  return
+fi
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  echo 'ERROR: You may not execute argparse.sh directly.'
+  exit 1
+fi
 
 ARGS_ARR=("$@")
 
@@ -78,20 +145,13 @@ ARRAY_DESCRIPTIONS=()
 HELP_DESCRIPTION=
 
 # Bold print.
-#
-# @param text [String]
-# @param args [String]
-bprint() {
-  printf "\033[1m$1\033[0m"
-}
+bprint() { printf "\033[1m$1\033[0m"; }
 
 # Color print.
 #
 # @param number [Integer]
 # @param text   [String]
-cprint() {
-  printf "\033[38;5;$1m$2\033[0m"
-}
+cprint()   { printf "\033[38;5;$1m$2\033[0m"; }
 cprint_q() { cprint_string="\033[38;5;$1m$2\033[0m"; }
 
 # @param arg_options
@@ -235,7 +295,7 @@ parse_args2() {
             [[ -z $additional_opts ]] && break
             bundled_flag=${OPTIONAL_FLAGS[$j]}
             [[ $additional_opts != *$bundled_flag* ]] && continue
-            value="${additional_opts##*$bundled_flag}"
+            value="${additional_opts#*$bundled_flag}"
             get_name_upper "${OPTIONAL_NAMES[$j]}"
             printf -v "ARG_$name_upper" -- "${value//%/%%}"
             additional_opts="${additional_opts%%$bundled_flag*}"
@@ -244,7 +304,7 @@ parse_args2() {
             [[ -z $additional_opts ]] && break
             bundled_flag="${ARRAY_FLAGS[$j]}"
             [[ $additional_opts != *$bundled_flag* ]] && continue
-            value="${additional_opts##*$bundled_flag}"
+            value="${additional_opts#*$bundled_flag}"
             get_name_upper "${ARRAY_NAMES[$j]}"
             additional_opts="${additional_opts%%$bundled_flag*}"
             if [[ -z $found_any_array_arg ]]; then
@@ -383,14 +443,14 @@ print_help() {
     printf "positional arguments:\n"
     for (( i=0; i < ${#POSITIONAL_NAMES[@]}; i++ )); do
       cprint_q 3 "${POSITIONAL_NAMES[$i]}"
-      j=0
+      j=
       echo "${POSITIONAL_DESCRIPTIONS[$i]}" | while read; do
-        if [[ $j -eq 0 ]]; then
+        if [[ -z $j ]]; then
+          j=1
           printf "  %-${X_POS}b ${REPLY//%/%%}\n" ${cprint_string}
         else
           printf "  %-${X_OPT_NL}s ${REPLY//%/%%}\n"
         fi
-        ((j++))
       done
     done
   fi
@@ -401,42 +461,42 @@ print_help() {
     cprint_q 3 "-${BOOLEAN_FLAGS[$i]}"
     flag_disp="$cprint_string"
     cprint_q 3 "--${BOOLEAN_NAMES[$i]}"
-    j=0
+    j=
     echo "${BOOLEAN_DESCRIPTIONS[$i]}" | while read; do
-      if [[ $j -eq 0 ]]; then
+      if [[ -z $j ]]; then
+        j=1
         printf "  %-${X_OPT}b ${REPLY//%/%%}\n" "$flag_disp, $cprint_string"
       else
         printf "  %-${X_OPT_NL}s ${REPLY//%/%%}\n"
       fi
-      ((j++))
     done
   done
   for (( i=0; i < ${#OPTIONAL_FLAGS[@]}; i++ )); do
     cprint_q 3 "-${OPTIONAL_FLAGS[$i]}"
     flag_disp="$cprint_string"
     cprint_q 3 "--${OPTIONAL_NAMES[$i]}"
-    j=0
+    j=
     echo "${OPTIONAL_DESCRIPTIONS[$i]}" | while read; do
-      if [[ $j -eq 0 ]]; then
+      if [[ -z $j ]]; then
+        j=1
         printf "  %-${X_OPT}b ${REPLY//%/%%}\n" "$flag_disp, $cprint_string"
       else
         printf "  %-${X_OPT_NL}s ${REPLY//%/%%}\n"
       fi
-      ((j++))
     done
   done
   for (( i=0; i < ${#ARRAY_FLAGS[@]}; i++ )); do
     cprint_q 3 "-${ARRAY_FLAGS[$i]}"
     flag_disp="$cprint_string"
     cprint_q 3 "--${ARRAY_NAMES[$i]}"
-    j=0
+    j=
     echo "${ARRAY_DESCRIPTIONS[$i]}" | while read; do
-      if [[ $j -eq 0 ]]; then
+      if [[ -z $j ]]; then
+        j=1
         printf "  %-${X_OPT}b ${REPLY//%/%%}\n" "$flag_disp, $cprint_string"
       else
         printf "  %-${X_OPT_NL}s ${REPLY//%/%%}\n"
       fi
-      ((j++))
     done
   done
 }

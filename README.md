@@ -9,7 +9,7 @@ Let's say you are writing a script, `process_file.sh`, to process a file, and it
 with some arguments:
 
 ```bash
-./process_file.sh input-data.txt --filetype csv -v
+./process_file.sh input-data.txt -v --delimiter=',' --columns='$1, $2'
 ```
 
 This is how argument parsing would be configured in your script to use `argparse.sh`:
@@ -19,32 +19,34 @@ This is how argument parsing would be configured in your script to use `argparse
 
 source "$(dirname "$0")/argparse.sh"
 
-arg_positional "[infile]       [Input text file to process]"
-arg_optional   "[filetype] [t] [Type of text file. Can be txt, csv or tsv]"
-arg_optional   "[verbose]  [v] [Print information about operations being performed]"
-arg_optional   "[columns]  [c] [Only print certain numbered columns]"
+# Default values for some arguments:
+ARG_COLUMNS='$1, $2, $3'
+ARG_DELIMITER=','
+
+arg_positional "[input-file]    [Input text file to process]"
+arg_boolean    "[verbose]   [v] [Print information about operations being performed]"
+arg_optional   "[delimiter] [d] [Delimiter which splits columns in the input file.]"
+arg_optional   "[columns]   [c] [Only print certain numbered columns. Passed directly to awk script. Default are '$ARG_COLUMNS'.]"
 arg_help       "[This script is for processing a text file]"
 parse_args
 
 echo $ARG_INFILE
 # => input-data.txt
 
-echo $ARG_FILETYPE
-# => csv
+echo $ARG_DELIMITER
+# => ,
 
 echo $ARG_VERBOSE
 # => true
 
 echo $ARG_COLUMNS
-# =>
+# => $1, $2
 
-if [ -n $ARG_VERBOSE ]; then
-  echo 'Beginning processing...'
+if [ -n "$ARG_VERBOSE" ]; then
+ echo 'Beginning processing...'
 fi
 
-if [ $ARG_FILETYPE = "csv" ];
-  awk -F ',' '{print $1}' $ARG_INFILE
-fi
+awk -F "$ARG_DELIMITER" "{print $ARG_COLUMNS}" "$ARG_INPUT_FILE"
 ```
 
 To get a better idea of the usage in a real shell script, look at
@@ -139,10 +141,15 @@ Functions for parsing arguments:
   * Arguments:
     - None
 
-Secret variables!
-* `POSITIONAL`
-  - Contains positional arguments in an array
+Additional helper functions and variables:
 * `__DIR__`
   - Full path of the directory which contains the script.
+* `${POSITIONAL[@]}`
+  - Array of additional positional arguments not parsed by argparse.sh
 * `print_help`
   - Function to print the help page, automatically done if `-h` flag is present
+* `bprint`
+  - Function to print the text as bold, without a trailing newline
+* `cprint`
+  - Function to print the text as [8-bit color](https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit),
+    without a trailing newline
