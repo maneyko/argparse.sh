@@ -103,7 +103,7 @@ numbers:
 
 ## Requirements
 
-bash >= 3.1
+[Bash](https://en.wikipedia.org/wiki/Bash_(Unix_shell)) >= 3.1
 
 ## API Documentation
 
@@ -111,6 +111,7 @@ All parameters passed to any function in `argparse.sh` must be surrounded by squ
 as done in [Usage](#usage).
 
 Functions for parsing arguments:
+
 * `arg_positional`
   * Arguments:
     - `arg_name`
@@ -137,7 +138,10 @@ Functions for parsing arguments:
   * Arguments:
     - None
 
+Set `HELP_WIDTH` (before calling `parse_args`) to set the column width of the help message.
+
 Additional helper functions and variables:
+
 * `__DIR__`
   - Full path of the directory which contains the script.
 * `${POSITIONAL[@]}`
