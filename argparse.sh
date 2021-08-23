@@ -15,7 +15,7 @@
 #
 # Example of user calling your script from the command line:
 #
-#       ./process_file.sh input-data.txt -v --delimiter=',' --columns='$1, $2'
+#       ./process_file.sh input-data.txt -v --delimiter=',' --expression='$1, $2'
 #
 # Example usage from your script:
 #
@@ -23,15 +23,14 @@
 #
 #       source "$(dirname "$0")/argparse.sh"
 #
-#       # Default values for some arguments:
-#       ARG_COLUMNS='$1, $2, $3'
+#       # Set default value.
 #       ARG_DELIMITER=','
 #
-#       arg_positional "[input-file]    [Input text file to process]"
-#       arg_boolean    "[verbose]   [v] [Print information about operations being performed]"
-#       arg_optional   "[delimiter] [d] [Delimiter which splits columns in the input file.]"
-#       arg_optional   "[columns]   [c] [Only print certain numbered columns. Passed directly to awk script. Default are '$ARG_COLUMNS'.]"
 #       arg_help       "[This script is for processing a text file]"
+#       arg_positional "[input-file]     [Input text file to process]"
+#       arg_boolean    "[verbose]    [v] [Print information about operations being performed]"
+#       arg_optional   "[delimiter]  [d] [Input file field separator. Default: '$ARG_DELIMITER']"
+#       arg_optional   "[expression] [e] [Expression passed directly to \`awk '{print ...}'\`]"
 #       parse_args
 #
 #       echo $ARG_INFILE
@@ -43,14 +42,11 @@
 #       echo $ARG_VERBOSE
 #       # => true
 #
-#       echo $ARG_COLUMNS
-#       # => $1, $2
-#
 #       if [ -n "$ARG_VERBOSE" ]; then
 #        echo 'Beginning processing...'
 #       fi
 #
-#       awk -F "$ARG_DELIMITER" "{print $ARG_COLUMNS}" "$ARG_INPUT_FILE"
+#       awk -F "$ARG_DELIMITER" "{print $ARG_EXPRESSION}" "$ARG_INPUT_FILE"
 #
 #
 # The functions the user can use when sourcing this file in their script are:
