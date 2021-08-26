@@ -12,7 +12,7 @@ parse_args
 N=$ARG_N_ITERATIONS
 
 echo "Speed test for processing several flags (N = $N) ..."
-cmd="./usage-example.sh -n1 -n 2 infile.txt --numbers '-29' outfile.txt -fo4 -vp2060"
+cmd="./usage-example.sh -n1 -n 2 infile.txt --numbers '-29' outfile.txt -fo 4 -vp2060"
 time for (( i=0; i < $N; i++ )); do
   $cmd >/dev/null
 done

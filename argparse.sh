@@ -17,6 +17,10 @@
 #
 #       ./process_file.sh input-data.txt -v --delimiter=',' --expression='$1, $2'
 #
+# Or more succinctly:
+#
+#       ./process_file.sh -vd, -e'$1, $2' input-data.txt
+#
 # Example usage from your script:
 #
 #       #!/bin/bash
@@ -98,6 +102,9 @@
 # * `$__DIR__'
 #   - Full (expanded) path of the directory your script is located
 #
+# * `${POSITIONAL[@]}'
+#   - Array of positional arguments (including those not parsed by argparse.sh)
+#
 # * bprint
 #   - Print the text as bold, without a trailing newline
 #   - Example: bprint "Important!!"
@@ -106,8 +113,8 @@
 #   - Print the text as 8-bit color, without a trailing newline
 #   - Example: cprint 1 "ERROR"  # Prints 'ERROR' as red
 #
-# * `${POSITIONAL[@]}'
-#   - Array of additional positional arguments not parsed by argparse.sh
+# * `print_help'
+#   - Function to print the help page, automatically done if `-h' flag is present
 
 
 if [[ ${BASH_VERSINFO[0]} -le 2 ]]; then

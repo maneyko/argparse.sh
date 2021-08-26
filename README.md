@@ -12,6 +12,12 @@ with some arguments:
 ./process_file.sh input-data.txt -v --delimiter=',' --expression='$1, $2'
 ```
 
+Or more succinctly:
+
+```bash
+./process_file.sh -vd, -e'$1, $2' input-data.txt
+```
+
 This is how argument parsing would be configured in your script to use `argparse.sh`:
 
 ```bash
@@ -50,7 +56,7 @@ To get a better idea of the usage in a real shell script, look at
 The script may be called like this:
 
 ```bash
-./usage-example.sh -f -p2020 infile.txt -n2 --verbose outfile.txt --outputs 3 -n 4 --numbers 8
+./usage-example.sh -fp2020 infile.txt -n2 --verbose outfile.txt --outputs 3 -n 4
 
 infile:      infile.txt
 outfile:     outfile.txt
@@ -58,7 +64,7 @@ port-number: 2020
 outputs:     3
 verbose:     true
 flag:        true
-numbers:     2 4 8
+numbers:     2 4
 ```
 
 ## Installation
@@ -84,14 +90,14 @@ as is done in [Usage](#usage).
 Boolean flags and options that take values may be bundled together, like so:
 
 ```bash
-$ ./usage-example.sh -vfp2020 --outputs 4 infile.txt
+$ ./usage-example.sh -vp2020 --outputs 4 infile.txt -fn 32
 infile:      infile.txt
 outfile:
 port-number: 2020
 outputs:     4
 verbose:     true
 flag:        true
-numbers:
+numbers:     32
 ```
 
 ## Notes
@@ -142,7 +148,7 @@ Set `HELP_WIDTH` (before calling `parse_args`) to set the column width of the he
 
 Additional helper functions and variables:
 
-* `__DIR__`
+* `$__DIR__`
   - Full path of the directory which contains the script.
 * `${POSITIONAL[@]}`
   - Array of additional positional arguments not parsed by argparse.sh
