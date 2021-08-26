@@ -292,6 +292,10 @@ parse_args2() {
             bundled_flag=${OPTIONAL_FLAGS[$j]}
             [[ $additional_opts != *$bundled_flag* ]] && continue
             value="${additional_opts#*$bundled_flag}"
+            if [[ -z $value ]]; then
+              value="$1"
+              shift
+            fi
             get_name_upper "${OPTIONAL_NAMES[$j]}"
             printf -v "ARG_$name_upper" -- "${value//%/%%}"
             additional_opts="${additional_opts%%$bundled_flag*}"
@@ -301,6 +305,10 @@ parse_args2() {
             bundled_flag="${ARRAY_FLAGS[$j]}"
             [[ $additional_opts != *$bundled_flag* ]] && continue
             value="${additional_opts#*$bundled_flag}"
+            if [[ -z $value ]]; then
+              value="$1"
+              shift
+            fi
             get_name_upper "${ARRAY_NAMES[$j]}"
             additional_opts="${additional_opts%%$bundled_flag*}"
             if [[ -z $found_any_array_arg ]]; then
