@@ -308,7 +308,11 @@ argparse.sh::parse_args() {
               value="$1"
               shift
             fi
-            get_name_upper "${ARRAY_NAMES[$j]}"
+            if [[ -n ${ARRAY_NAMES[$j]} ]]; then
+              get_name_upper "${ARRAY_NAMES[$j]}"
+            else
+              get_name_upper "${ARRAY_FLAGS[$j]}"
+            fi
             additional_opts="${additional_opts%%$bundled_flag*}"
             if [[ -z $found_any_array_arg ]]; then
               found_any_array_arg=1
@@ -333,7 +337,11 @@ argparse.sh::parse_args() {
       esac
       if [[ -n $found_bool ]]; then
         found_arg=1
-        get_name_upper "$opt_name"
+        if [[ -n "$opt_name" ]]; then
+          get_name_upper "$opt_name"
+        else
+          get_name_upper "$opt_flag"
+        fi
         printf -v "ARG_$name_upper" 'true'
       fi
     done

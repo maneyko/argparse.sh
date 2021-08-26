@@ -22,7 +22,7 @@ arg_optional   "[outputs]            [o] [The number of outputs]"
 arg_boolean    "[verbose]            [] [Do verbose output]"
 arg_boolean    "   [flag]               [f] [My important flag]"
 arg_boolean    "[x] [no corresponding flag]"
-arg_array      "[numbers]            [n] [Numbers to add together. Default is: [${ARG_NUMBERS[@]}]]"
+arg_array      "[]            [n] [Numbers to add together. Default is: [${ARG_NUMBERS[@]}]]"
 
 read -d '' helptxt << EOT
 This file illustrates how argparse.sh can be used
@@ -39,7 +39,9 @@ port-number: $ARG_PORT_NUMBER
 outputs:     $ARG_OUTPUTS
 verbose:     $ARG_VERBOSE
 flag:        $ARG_FLAG
+x:           $ARG_X
 numbers:     ${ARG_NUMBERS[@]}
+numbers:     ${ARG_N[@]}
 
 Script '${0##*/}' is in '$__DIR__'
 EOT
