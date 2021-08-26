@@ -100,7 +100,7 @@
 # Other methods and variables that will become available to you:
 #
 # * `$__DIR__'
-#   - Full (expanded) path of the directory your script is located
+#   - Full (expanded) path of the directory where your script is located
 #
 # * `${POSITIONAL[@]}'
 #   - Array of positional arguments (including those not parsed by argparse.sh)
@@ -113,7 +113,7 @@
 #   - Print the text as 8-bit color, without a trailing newline
 #   - Example: cprint 1 "ERROR"  # Prints 'ERROR' as red
 #
-# * `print_help'
+# * print_help
 #   - Function to print the help page, automatically done if `-h' flag is present
 
 
@@ -158,75 +158,63 @@ cprint()   { printf "\033[38;5;$1m$2\033[0m"; }
 cprint_q() { cprint_string="\033[38;5;$1m$2\033[0m"; }
 
 # @param arg_options
-parse_arg1() {
+parse_first_arg() {
   t1="${1%%\]*}"
-  t2="${1#*\]}"
-  wo_arg1="[${t2#*\[}"
-  parse_arg1_result="${t1#*\[}"
+  after_first_arg="[${1#*\[*\[}"
+  first_arg="${t1#*\[}"
+}
+
+parse_last_arg() {
+  t1="${1#*\[}"
+  last_arg="${t1%\]*}"
 }
 
 # @param arg_name
 # @param arg_description
 arg_positional() {
-  arg="$@"
-  parse_arg1 "$arg"
-  arg_name="$parse_arg1_result"
-  t1="${wo_arg1#*\[}"
-  arg_desc="${t1%\]*}"
-  POSITIONAL_NAMES+=($arg_name)
-  POSITIONAL_DESCRIPTIONS+=("$arg_desc")
+  parse_first_arg "$@"
+  POSITIONAL_NAMES+=("$first_arg")
+  parse_last_arg "$after_first_arg"
+  POSITIONAL_DESCRIPTIONS+=("$last_arg")
 }
 
 # @param arg_name
 # @param arg_flag
 # @param arg_description
 arg_optional() {
-  arg="$@"
-  parse_arg1 "$arg"
-  arg_name="$parse_arg1_result"
-  parse_arg1 "$wo_arg1"
-  arg_flag="$parse_arg1_result"
-  t1="${wo_arg1#*\[}"
-  arg_desc="${t1%\]*}"
-  OPTIONAL_NAMES+=($arg_name)
-  OPTIONAL_FLAGS+=($arg_flag)
-  OPTIONAL_DESCRIPTIONS+=("$arg_desc")
+  parse_first_arg "$@"
+  OPTIONAL_NAMES+=($first_arg)
+  parse_first_arg "$after_first_arg"
+  OPTIONAL_FLAGS+=($first_arg)
+  parse_last_arg "$after_first_arg"
+  OPTIONAL_DESCRIPTIONS+=("$last_arg")
 }
 
 # @param arg_name
 # @param arg_flag
 # @param arg_description
 arg_boolean() {
-  arg="$@"
-  parse_arg1 "$arg"
-  arg_name="$parse_arg1_result"
-  parse_arg1 "$wo_arg1"
-  arg_flag="$parse_arg1_result"
-  t1="${wo_arg1#*\[}"
-  arg_desc="${t1%\]*}"
-  BOOLEAN_NAMES+=($arg_name)
-  BOOLEAN_FLAGS+=($arg_flag)
-  BOOLEAN_DESCRIPTIONS+=("$arg_desc")
+  parse_first_arg "$@"
+  BOOLEAN_NAMES+=($first_arg)
+  parse_first_arg "$after_first_arg"
+  BOOLEAN_FLAGS+=($first_arg)
+  parse_last_arg "$after_first_arg"
+  BOOLEAN_DESCRIPTIONS+=("$last_arg")
 }
 
 arg_array() {
-  arg="$@"
-  parse_arg1 "$arg"
-  arg_name="$parse_arg1_result"
-  parse_arg1 "$wo_arg1"
-  arg_flag="$parse_arg1_result"
-  t1="${wo_arg1#*\[}"
-  arg_desc="${t1%\]*}"
-  ARRAY_NAMES+=($arg_name)
-  ARRAY_FLAGS+=($arg_flag)
-  ARRAY_DESCRIPTIONS+=("$arg_desc")
+  parse_first_arg "$@"
+  ARRAY_NAMES+=($first_arg)
+  parse_first_arg "$after_first_arg"
+  ARRAY_FLAGS+=($first_arg)
+  parse_last_arg "$after_first_arg"
+  ARRAY_DESCRIPTIONS+=("$last_arg")
 }
 
 # @param arg_description
 arg_help() {
-  arg="$@"
-  t1="${arg#*\[}"
-  HELP_DESCRIPTION="${t1%\]*}"
+  parse_last_arg "$@"
+  HELP_DESCRIPTION="$last_arg"
   BOOLEAN_NAMES+=('help')
   BOOLEAN_FLAGS+=('h')
   BOOLEAN_DESCRIPTIONS+=('Print this help message.')
@@ -264,7 +252,7 @@ get_name_upper() {
 
 # Set $__DIR__ variable.
 # The full path of the directory of the script.
-set__dir() {
+set__dir__() {
   _origin_pwd="$PWD"
   cd "${0%/*}"
   __DIR__="$PWD"
@@ -273,7 +261,7 @@ set__dir() {
 
 parse_args() {
   parse_args2 "${ARGS_ARR[@]}"
-  set__dir
+  set__dir__
 }
 
 # @param args_arr

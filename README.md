@@ -109,7 +109,7 @@ numbers:     32
 
 ## Requirements
 
-[Bash](https://en.wikipedia.org/wiki/Bash_(Unix_shell)) >= 3.1
+[Bash](https://en.wikipedia.org/wiki/Bash_(Unix_shell)) >= 3.0
 
 ## API Documentation
 
