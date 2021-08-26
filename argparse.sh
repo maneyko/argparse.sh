@@ -157,54 +157,61 @@ bprint() { printf "\033[1m$1\033[0m"; }
 cprint()   { printf "\033[38;5;$1m$2\033[0m"; }
 cprint_q() { cprint_string="\033[38;5;$1m$2\033[0m"; }
 
-long_arg_pat='[0-9A-Za-z_-]+'
+var_name='[0-9A-Za-z_-]+'
+optional_space_pat='([[:space:]]+)?'
+three_arg_pat="\[($var_name)\]$optional_space_pat(\[([[:alnum:]]{1})?\])?$optional_space_pat(\[(.*)?\])?"
 
 # @param arg_name
 # @param arg_description
 arg_positional() {
-  [[ "$@" =~ \[($long_arg_pat)\]([[:space:]]+)?(\[(.*)?\])? ]]
-  POSITIONAL_NAMES+=("${BASH_REMATCH[1]}")
-  POSITIONAL_DESCRIPTIONS+=("${BASH_REMATCH[4]}")
+  if [[ "$@" =~ \[($var_name)\]$optional_space_pat(\[(.*)?\])? ]]; then
+    POSITIONAL_NAMES+=("${BASH_REMATCH[1]}")
+    POSITIONAL_DESCRIPTIONS+=("${BASH_REMATCH[4]}")
+  fi
 }
 
 # @param arg_name
 # @param arg_flag
 # @param arg_description
 arg_optional() {
-  [[ $@ =~ \[($long_arg_pat)\]([[:space:]]+)?(\[([[:alnum:]]{1})?\])?([[:space:]]+)?(\[(.*)?\])? ]]
-  OPTIONAL_NAMES+=("${BASH_REMATCH[1]}")
-  OPTIONAL_FLAGS+=("${BASH_REMATCH[4]}")
-  OPTIONAL_DESCRIPTIONS+=("${BASH_REMATCH[7]}")
+  if [[ "$@" =~ $three_arg_pat ]]; then
+    OPTIONAL_NAMES+=("${BASH_REMATCH[1]}")
+    OPTIONAL_FLAGS+=("${BASH_REMATCH[4]}")
+    OPTIONAL_DESCRIPTIONS+=("${BASH_REMATCH[7]}")
+  fi
 }
 
 # @param arg_name
 # @param arg_flag
 # @param arg_description
 arg_boolean() {
-  [[ $@ =~ \[($long_arg_pat)\]([[:space:]]+)?(\[([[:alnum:]]{1})?\])?([[:space:]]+)?(\[(.*)?\])? ]]
-  BOOLEAN_NAMES+=("${BASH_REMATCH[1]}")
-  BOOLEAN_FLAGS+=("${BASH_REMATCH[4]}")
-  BOOLEAN_DESCRIPTIONS+=("${BASH_REMATCH[7]}")
+  if [[ "$@" =~ $three_arg_pat ]]; then
+    BOOLEAN_NAMES+=("${BASH_REMATCH[1]}")
+    BOOLEAN_FLAGS+=("${BASH_REMATCH[4]}")
+    BOOLEAN_DESCRIPTIONS+=("${BASH_REMATCH[7]}")
+  fi
 }
 
 arg_array() {
-  [[ $@ =~ \[($long_arg_pat)\]([[:space:]]+)?(\[([[:alnum:]]{1})?\])?([[:space:]]+)?\[(.*)?\] ]]
-  ARRAY_NAMES+=("${BASH_REMATCH[1]}")
-  ARRAY_FLAGS+=("${BASH_REMATCH[4]}")
-  ARRAY_DESCRIPTIONS+=("${BASH_REMATCH[6]}")
+  if [[ "$@" =~ $three_arg_pat ]]; then
+    ARRAY_NAMES+=("${BASH_REMATCH[1]}")
+    ARRAY_FLAGS+=("${BASH_REMATCH[4]}")
+    ARRAY_DESCRIPTIONS+=("${BASH_REMATCH[7]}")
+  fi
 }
 
 # @param arg_description
 arg_help() {
-  [[ $@ =~ \[(.*)?\] ]]
-  HELP_DESCRIPTION="${BASH_REMATCH[1]}"
+  if [[ $@ =~ \[(.*)?\] ]]; then
+    HELP_DESCRIPTION="${BASH_REMATCH[1]}"
+  fi
   BOOLEAN_NAMES+=('help')
   BOOLEAN_FLAGS+=('h')
   BOOLEAN_DESCRIPTIONS+=('Print this help message.')
 }
 
 get_name_upper() {
-  res="${1//-/_}"
+  local res="${1//-/_}"
   res="${res//a/A}"
   res="${res//b/B}"
   res="${res//c/C}"
@@ -235,23 +242,26 @@ get_name_upper() {
 
 # Set $__DIR__ variable.
 # The full path of the directory of the script.
-set__dir__() {
-  _origin_pwd="$PWD"
+get__dir__() {
+  local _origin_pwd="$PWD"
   cd "${0%/*}"
   __DIR__="$PWD"
   cd "$_origin_pwd"
 }
 
 parse_args() {
-  parse_args2 "${ARGS_ARR[@]}"
-  set__dir__
+  argparse.sh::parse_args "${ARGS_ARR[@]}"
+  get__dir__
 }
 
 # @param args_arr
-parse_args2() {
+argparse.sh::parse_args() {
   while [[ $# -gt 0 ]]; do
-    key=$1
-    found_arg=
+    local key=$1
+    local found_arg=
+    local \
+      found_bool found_opt found_array_arg found_any_array_arg \
+      opt_name opt_flag additional_opts bundled_flag value
     for (( i=0; i < ${#BOOLEAN_FLAGS[@]}; i++ )); do
       found_bool=
       opt_flag=${BOOLEAN_FLAGS[$i]}
@@ -410,9 +420,10 @@ parse_args2() {
 
 print_help() {
   : ${HELP_WIDTH:=30}
-  X_POS=$(($HELP_WIDTH + 10))
-  X_OPT=$(($HELP_WIDTH + 23))
-  X_OPT_NL=$(($HELP_WIDTH - 3))
+  local X_POS=$(($HELP_WIDTH + 10))
+  local X_OPT=$(($HELP_WIDTH + 23))
+  local X_OPT_NL=$(($HELP_WIDTH - 3))
+  local j opt_flag flag_disp
   bprint "usage:"
   printf "  ${0##*/} "
   for p_name in "${POSITIONAL_NAMES[@]}"; do
