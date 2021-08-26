@@ -19,7 +19,7 @@ arg_positional "[outfile]         [The output file.
 arg_optional   "[port-number]        [p] [The port number (as a percent %)]"
 arg_optional   "[grep-regex-pattern] [g] [Grep regex pattern to use when searching files. Default: [[space]]+]"
 arg_optional   "[outputs]            [o] [The number of outputs]"
-arg_boolean    "[verbose]            [v] [Do verbose output]"
+arg_boolean    "[verbose]            [] [Do verbose output]"
 arg_boolean    "[flag]               [f] [My important flag]"
 arg_array      "[numbers]            [n] [Numbers to add together. Default is: [${ARG_NUMBERS[@]}]]"
 

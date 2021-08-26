@@ -157,64 +157,47 @@ bprint() { printf "\033[1m$1\033[0m"; }
 cprint()   { printf "\033[38;5;$1m$2\033[0m"; }
 cprint_q() { cprint_string="\033[38;5;$1m$2\033[0m"; }
 
-# @param arg_options
-parse_first_arg() {
-  t1="${1%%\]*}"
-  after_first_arg="[${1#*\[*\[}"
-  first_arg="${t1#*\[}"
-}
-
-parse_last_arg() {
-  t1="${1#*\[}"
-  last_arg="${t1%\]*}"
-}
+long_arg_pat='[0-9A-Za-z_-]+'
 
 # @param arg_name
 # @param arg_description
 arg_positional() {
-  parse_first_arg "$@"
-  POSITIONAL_NAMES+=("$first_arg")
-  parse_last_arg "$after_first_arg"
-  POSITIONAL_DESCRIPTIONS+=("$last_arg")
+  [[ "$@" =~ \[($long_arg_pat)\]([[:space:]]+)?(\[(.*)?\])? ]]
+  POSITIONAL_NAMES+=("${BASH_REMATCH[1]}")
+  POSITIONAL_DESCRIPTIONS+=("${BASH_REMATCH[4]}")
 }
 
 # @param arg_name
 # @param arg_flag
 # @param arg_description
 arg_optional() {
-  parse_first_arg "$@"
-  OPTIONAL_NAMES+=($first_arg)
-  parse_first_arg "$after_first_arg"
-  OPTIONAL_FLAGS+=($first_arg)
-  parse_last_arg "$after_first_arg"
-  OPTIONAL_DESCRIPTIONS+=("$last_arg")
+  [[ $@ =~ \[($long_arg_pat)\]([[:space:]]+)?(\[([[:alnum:]]{1})?\])?([[:space:]]+)?(\[(.*)?\])? ]]
+  OPTIONAL_NAMES+=("${BASH_REMATCH[1]}")
+  OPTIONAL_FLAGS+=("${BASH_REMATCH[4]}")
+  OPTIONAL_DESCRIPTIONS+=("${BASH_REMATCH[7]}")
 }
 
 # @param arg_name
 # @param arg_flag
 # @param arg_description
 arg_boolean() {
-  parse_first_arg "$@"
-  BOOLEAN_NAMES+=($first_arg)
-  parse_first_arg "$after_first_arg"
-  BOOLEAN_FLAGS+=($first_arg)
-  parse_last_arg "$after_first_arg"
-  BOOLEAN_DESCRIPTIONS+=("$last_arg")
+  [[ $@ =~ \[($long_arg_pat)\]([[:space:]]+)?(\[([[:alnum:]]{1})?\])?([[:space:]]+)?(\[(.*)?\])? ]]
+  BOOLEAN_NAMES+=("${BASH_REMATCH[1]}")
+  BOOLEAN_FLAGS+=("${BASH_REMATCH[4]}")
+  BOOLEAN_DESCRIPTIONS+=("${BASH_REMATCH[7]}")
 }
 
 arg_array() {
-  parse_first_arg "$@"
-  ARRAY_NAMES+=($first_arg)
-  parse_first_arg "$after_first_arg"
-  ARRAY_FLAGS+=($first_arg)
-  parse_last_arg "$after_first_arg"
-  ARRAY_DESCRIPTIONS+=("$last_arg")
+  [[ $@ =~ \[($long_arg_pat)\]([[:space:]]+)?(\[([[:alnum:]]{1})?\])?([[:space:]]+)?\[(.*)?\] ]]
+  ARRAY_NAMES+=("${BASH_REMATCH[1]}")
+  ARRAY_FLAGS+=("${BASH_REMATCH[4]}")
+  ARRAY_DESCRIPTIONS+=("${BASH_REMATCH[6]}")
 }
 
 # @param arg_description
 arg_help() {
-  parse_last_arg "$@"
-  HELP_DESCRIPTION="$last_arg"
+  [[ $@ =~ \[(.*)?\] ]]
+  HELP_DESCRIPTION="${BASH_REMATCH[1]}"
   BOOLEAN_NAMES+=('help')
   BOOLEAN_FLAGS+=('h')
   BOOLEAN_DESCRIPTIONS+=('Print this help message.')
@@ -274,17 +257,19 @@ parse_args2() {
       opt_flag=${BOOLEAN_FLAGS[$i]}
       opt_name=${BOOLEAN_NAMES[$i]}
       case $key in
-        -$opt_flag|--$opt_name)
+        --$opt_name)
           found_bool=1
           shift
           ;;
         -$opt_flag*)
+          [[ -z $opt_flag ]] && continue
           found_bool=1
           shift
           additional_opts="${key#-$opt_flag}"
           for (( j=0; j < ${#OPTIONAL_FLAGS[@]}; j++ )); do
             [[ -z $additional_opts ]] && break
             bundled_flag=${OPTIONAL_FLAGS[$j]}
+            [[ -z $bundled_flag ]] && continue
             [[ $additional_opts != *$bundled_flag* ]] && continue
             value="${additional_opts#*$bundled_flag}"
             if [[ -z $value ]]; then
@@ -298,6 +283,7 @@ parse_args2() {
           for (( j=0; j < ${#ARRAY_FLAGS[@]}; j++ )); do
             [[ -z $additional_opts ]] && break
             bundled_flag="${ARRAY_FLAGS[$j]}"
+            [[ -z $bundled_flag ]] && continue
             [[ $additional_opts != *$bundled_flag* ]] && continue
             value="${additional_opts#*$bundled_flag}"
             if [[ -z $value ]]; then
@@ -315,6 +301,7 @@ parse_args2() {
           for (( j=0; j < ${#BOOLEAN_FLAGS[@]}; j++ )); do
             [[ -z $additional_opts ]] && break
             bundled_flag=${BOOLEAN_FLAGS[$j]}
+            [[ -z $bundled_flag ]] && continue
             [[ $additional_opts != *$bundled_flag* ]] && continue
             get_name_upper "${BOOLEAN_NAMES[$j]}"
             printf -v "ARG_$name_upper" 'true'
@@ -334,11 +321,13 @@ parse_args2() {
       opt_name=${OPTIONAL_NAMES[$i]}
       case $key in
         -$opt_flag)
+          [[ -z $opt_flag ]] && continue
           found_opt=1
           val="$2"
           shift; shift
           ;;
         -$opt_flag*)
+          [[ -z $opt_flag ]] && continue
           found_opt=1
           val="${key#-$opt_flag}"
           shift
@@ -366,11 +355,13 @@ parse_args2() {
       opt_name=${ARRAY_NAMES[$i]}
       case $key in
         -$opt_flag)
+          [[ -z $opt_flag ]] && continue
           found_array_arg=1
           val="$2"
           shift; shift
           ;;
         -$opt_flag*)
+          [[ -z $opt_flag ]] && continue
           found_array_arg=1
           val="${key#-$opt_flag}"
           shift
@@ -428,13 +419,16 @@ print_help() {
     printf "[$p_name] "
   done
   for bool_flag in "${BOOLEAN_FLAGS[@]}"; do
+    [[ -z $bool_flag ]] && continue
     printf "[-$bool_flag] "
   done
   for (( i=0; i < ${#OPTIONAL_FLAGS[@]}; i++ )); do
+    [[ -z ${OPTIONAL_FLAGS[$i]} ]] && continue
     printf "[-${OPTIONAL_FLAGS[$i]} ${OPTIONAL_NAMES[$i]}] "
   done
   for (( i=0; i < ${#ARRAY_FLAGS[@]}; i++ )); do
     opt_flag="${ARRAY_FLAGS[$i]}"
+    [[ -z $opt_flag ]] && continue
     printf "[-$opt_flag ${ARRAY_NAMES[$i]} -$opt_flag ...] "
   done
   echo -e "\n$HELP_DESCRIPTION\n"
@@ -457,42 +451,57 @@ print_help() {
   [[ -n $POSITIONAL_NAMES ]] && printf "\n"
   printf "optional arguments:\n"
   for (( i=0; i < ${#BOOLEAN_FLAGS[@]}; i++ )); do
-    cprint_q 3 "-${BOOLEAN_FLAGS[$i]}"
-    flag_disp="$cprint_string"
+    if [[ -n ${BOOLEAN_FLAGS[$i]} ]]; then
+      cprint_q 3 "-${BOOLEAN_FLAGS[$i]}"
+      flag_disp="$cprint_string,"
+    else
+      cprint_q 3 "  "
+      flag_disp="$cprint_string "
+    fi
     cprint_q 3 "--${BOOLEAN_NAMES[$i]}"
     j=
     echo "${BOOLEAN_DESCRIPTIONS[$i]}" | while read; do
       if [[ -z $j ]]; then
         j=1
-        printf "  %-${X_OPT}b ${REPLY//%/%%}\n" "$flag_disp, $cprint_string"
+        printf "  %-${X_OPT}b ${REPLY//%/%%}\n" "$flag_disp $cprint_string"
       else
         printf "  %-${X_OPT_NL}s ${REPLY//%/%%}\n"
       fi
     done
   done
   for (( i=0; i < ${#OPTIONAL_FLAGS[@]}; i++ )); do
-    cprint_q 3 "-${OPTIONAL_FLAGS[$i]}"
-    flag_disp="$cprint_string"
+    if [[ -n ${OPTIONAL_FLAGS[$i]} ]]; then
+      cprint_q 3 "-${OPTIONAL_FLAGS[$i]}"
+      flag_disp="$cprint_string,"
+    else
+      cprint_q 3 "  "
+      flag_disp="$cprint_string "
+    fi
     cprint_q 3 "--${OPTIONAL_NAMES[$i]}"
     j=
     echo "${OPTIONAL_DESCRIPTIONS[$i]}" | while read; do
       if [[ -z $j ]]; then
         j=1
-        printf "  %-${X_OPT}b ${REPLY//%/%%}\n" "$flag_disp, $cprint_string"
+        printf "  %-${X_OPT}b ${REPLY//%/%%}\n" "$flag_disp $cprint_string"
       else
         printf "  %-${X_OPT_NL}s ${REPLY//%/%%}\n"
       fi
     done
   done
   for (( i=0; i < ${#ARRAY_FLAGS[@]}; i++ )); do
-    cprint_q 3 "-${ARRAY_FLAGS[$i]}"
-    flag_disp="$cprint_string"
+    if [[ -n ${ARRAY_FLAGS[$i]} ]]; then
+      cprint_q 3 "-${ARRAY_FLAGS[$i]}"
+      flag_disp="$cprint_string,"
+    else
+      cprint_q 3 "  "
+      flag_disp="$cprint_string "
+    fi
     cprint_q 3 "--${ARRAY_NAMES[$i]}"
     j=
     echo "${ARRAY_DESCRIPTIONS[$i]}" | while read; do
       if [[ -z $j ]]; then
         j=1
-        printf "  %-${X_OPT}b ${REPLY//%/%%}\n" "$flag_disp, $cprint_string"
+        printf "  %-${X_OPT}b ${REPLY//%/%%}\n" "$flag_disp $cprint_string"
       else
         printf "  %-${X_OPT_NL}s ${REPLY//%/%%}\n"
       fi
