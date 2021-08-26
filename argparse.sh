@@ -160,9 +160,9 @@ cprint_q() { cprint_string="\033[38;5;$1m$2\033[0m"; }
 optional_space_pat='([[:space:]]+)?'
 arg_name_pat="([0-9A-Za-z_-]{2,})"
 arg_flag_pat="([[:alnum:]]{1,2})"
-arg_help_pat="(\[(.*)\])?"
-arg_positional_pat="\[${arg_name_pat}\]${optional_space_pat}${arg_help_pat}"
-three_arg_pat="\[${arg_name_pat}?\]?${optional_space_pat}\[?${arg_flag_pat}?\]${optional_space_pat}${arg_help_pat}"
+arg_help_pat="(\[(.*)\])"
+arg_positional_pat="\[${arg_name_pat}\]${optional_space_pat}${arg_help_pat}?"
+three_arg_pat="\[${arg_name_pat}?\]?${optional_space_pat}\[?${arg_flag_pat}?\]${optional_space_pat}${arg_help_pat}?"
 
 # @param arg_name
 # @param arg_description
@@ -205,8 +205,8 @@ arg_array() {
 
 # @param arg_description
 arg_help() {
-  if [[ $@ =~ \[(.*)?\] ]]; then
-    HELP_DESCRIPTION="${BASH_REMATCH[1]}"
+  if [[ "$@" =~ $arg_help_pat ]]; then
+    HELP_DESCRIPTION="${BASH_REMATCH[2]}"
   fi
   BOOLEAN_NAMES+=('help')
   BOOLEAN_FLAGS+=('h')
