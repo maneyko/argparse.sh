@@ -20,7 +20,8 @@ arg_optional   "[port-number]        [p] [The port number (as a percent %)]"
 arg_optional   "[grep-regex-pattern] [g] [Grep regex pattern to use when searching files. Default: [[space]]+]"
 arg_optional   "[outputs]            [o] [The number of outputs]"
 arg_boolean    "[verbose]            [] [Do verbose output]"
-arg_boolean    "[flag]               [f] [My important flag]"
+arg_boolean    "   [flag]               [f] [My important flag]"
+arg_boolean    "[x] [no corresponding flag]"
 arg_array      "[numbers]            [n] [Numbers to add together. Default is: [${ARG_NUMBERS[@]}]]"
 
 read -d '' helptxt << EOT
