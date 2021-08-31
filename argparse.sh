@@ -6,51 +6,51 @@
 #
 # Place this file in your `$PATH' and source it at the top of your script using:
 #
-#       source "argparse.sh"
+#     source "argparse.sh"
 #
 # Or if argparse.sh is in the same directory as your script, you may use:
 #
-#       source "$(dirname "$0")/argparse.sh"
+#     source "$(dirname "$0")/argparse.sh"
 #
 #
 # Example of user calling your script from the command line:
 #
-#       ./process_file.sh input-data.txt -v --delimiter=',' --expression='$1, $2'
+#     ./process_file.sh input-data.txt -v --delimiter=',' --expression='$1, $2'
 #
 # Or more succinctly:
 #
-#       ./process_file.sh -vd, -e'$1, $2' input-data.txt
+#     ./process_file.sh -vd, -e'$1, $2' input-data.txt
 #
 # Example usage from your script:
 #
-#       #!/bin/bash
+#     #!/bin/bash
 #
-#       source "$(dirname "$0")/argparse.sh"
+#     source "$(dirname "$0")/argparse.sh"
 #
-#       # Set default value.
-#       ARG_DELIMITER=','
+#     # Set default value.
+#     ARG_DELIMITER=','
 #
-#       arg_help       "[This script is for processing a text file]"
-#       arg_positional "[input-file]     [Input text file to process]"
-#       arg_boolean    "[verbose]    [v] [Print information about operations being performed]"
-#       arg_optional   "[delimiter]  [d] [Input file field separator. Default: '$ARG_DELIMITER']"
-#       arg_optional   "[expression] [e] [Expression passed directly to \`awk '{print ...}'\`]"
-#       parse_args
+#     arg_help       "[This script is for processing a text file]"
+#     arg_positional "[input-file]     [Input text file to process]"
+#     arg_boolean    "[verbose]    [v] [Print information about operations being performed]"
+#     arg_optional   "[delimiter]  [d] [Input file field separator. Default: '$ARG_DELIMITER']"
+#     arg_optional   "[expression] [e] [Expression passed directly to \`awk '{print ...}'\`]"
+#     parse_args
 #
-#       echo $ARG_INFILE
-#       # => input-data.txt
+#     echo $ARG_INFILE
+#     # => input-data.txt
 #
-#       echo $ARG_DELIMITER
-#       # => ,
+#     echo $ARG_DELIMITER
+#     # => ,
 #
-#       echo $ARG_VERBOSE
-#       # => true
+#     echo $ARG_VERBOSE
+#     # => true
 #
-#       if [ -n "$ARG_VERBOSE" ]; then
-#        echo 'Beginning processing...'
-#       fi
+#     if [ -n "$ARG_VERBOSE" ]; then
+#      echo 'Beginning processing...'
+#     fi
 #
-#       awk -F "$ARG_DELIMITER" "{print $ARG_EXPRESSION}" "$ARG_INPUT_FILE"
+#     awk -F "$ARG_DELIMITER" "{print $ARG_EXPRESSION}" "$ARG_INPUT_FILE"
 #
 #
 # The functions the user can use when sourcing this file in their script are:
@@ -356,12 +356,6 @@ argparse.sh::parse_args() {
           val="$2"
           shift; shift
           ;;
-        -$opt_flag*)
-          [[ -z $opt_flag ]] && continue
-          found_opt=1
-          val="${key#-$opt_flag}"
-          shift
-          ;;
         --$opt_name)
           [[ -z $opt_name ]] && continue
           found_opt=1
@@ -369,8 +363,15 @@ argparse.sh::parse_args() {
           shift; shift
           ;;
         --$opt_name=*)
+          [[ -z $opt_name ]] && continue
           found_opt=1
           val="${key#--$opt_name=}"
+          shift
+          ;;
+        -$opt_flag*)
+          [[ -z $opt_flag ]] && continue
+          found_opt=1
+          val="${key#-$opt_flag}"
           shift
           ;;
       esac
@@ -395,12 +396,6 @@ argparse.sh::parse_args() {
           val="$2"
           shift; shift
           ;;
-        -$opt_flag*)
-          [[ -z $opt_flag ]] && continue
-          found_array_arg=1
-          val="${key#-$opt_flag}"
-          shift
-          ;;
         --$opt_name)
           [[ -z $opt_name ]] && continue
           found_array_arg=1
@@ -411,6 +406,12 @@ argparse.sh::parse_args() {
           [[ -z $opt_name ]] && continue
           found_array_arg=1
           val="${key#--$opt_name=}"
+          shift
+          ;;
+        -$opt_flag*)
+          [[ -z $opt_flag ]] && continue
+          found_array_arg=1
+          val="${key#-$opt_flag}"
           shift
           ;;
       esac
@@ -454,24 +455,35 @@ print_help() {
   local X_POS=$(($HELP_WIDTH + 10))
   local X_OPT=$(($HELP_WIDTH + 23))
   local X_OPT_NL=$(($HELP_WIDTH - 3))
-  local j opt_flag flag_disp
+  local j opt_flag opt_name flag_disp
   bprint "usage:"
   printf "  ${0##*/} "
   for p_name in "${POSITIONAL_NAMES[@]}"; do
     printf "[$p_name] "
   done
-  for bool_flag in "${BOOLEAN_FLAGS[@]}"; do
-    [[ -z $bool_flag ]] && continue
-    printf "[-$bool_flag] "
+  for (( i=0; i < ${#BOOLEAN_FLAGS[@]}; i++ )); do
+    bool_flag="${BOOLEAN_FLAGS[$i]}"
+    if [[ -n $bool_flag ]]; then
+      printf "[-$bool_flag] "
+    else
+      printf "[--${BOOLEAN_NAMES[$i]}] "
+    fi
   done
   for (( i=0; i < ${#OPTIONAL_FLAGS[@]}; i++ )); do
-    [[ -z ${OPTIONAL_FLAGS[$i]} ]] && continue
-    printf "[-${OPTIONAL_FLAGS[$i]} ${OPTIONAL_NAMES[$i]}] "
+    if [[ -n ${OPTIONAL_FLAGS[$i]} ]]; then
+      printf "[-${OPTIONAL_FLAGS[$i]} ${OPTIONAL_NAMES[$i]}] "
+    else
+      printf "[--${OPTIONAL_NAMES[$i]}=STRING] "
+    fi
   done
   for (( i=0; i < ${#ARRAY_FLAGS[@]}; i++ )); do
     opt_flag="${ARRAY_FLAGS[$i]}"
-    [[ -z $opt_flag ]] && continue
-    printf "[-$opt_flag ${ARRAY_NAMES[$i]} -$opt_flag ...] "
+    opt_name="${ARRAY_NAMES[$i]}"
+    if [[ -n $opt_flag ]]; then
+      printf "[-$opt_flag $opt_name -$opt_flag ...] "
+    else
+      printf "[--$opt_name=ARG1 --$opt_flag=ARG2 ...] "
+    fi
   done
   echo -e "\n$HELP_DESCRIPTION\n"
   if [[ -n $POSITIONAL_NAMES ]]; then
