@@ -1,8 +1,6 @@
 #!/bin/bash
 
-# argparse.sh
-#
-# https://github.com/maneyko/argparse.sh
+# argparse.sh -- https://github.com/maneyko/argparse.sh
 #
 # Place this file in your `$PATH' and source it at the top of your script using:
 #
@@ -13,7 +11,7 @@
 #     source "$(dirname "$0")/argparse.sh"
 #
 #
-# Example of user calling your script from the command line:
+# Example of a user calling your script from the command line:
 #
 #     ./process_file.sh input-data.txt -v --delimiter=',' --expression='$1, $2'
 #
@@ -53,7 +51,7 @@
 #     awk -F "$ARG_DELIMITER" "{print $ARG_EXPRESSION}" "$ARG_INPUT_FILE"
 #
 #
-# The functions the user can use when sourcing this file in their script are:
+# The functions the programmer can use when sourcing this file in their script are:
 #
 # * arg_positional
 #   - This parses positional arguments to your script
@@ -100,10 +98,12 @@
 # Other methods and variables that will become available to you:
 #
 # * `$__DIR__'
-#   - Full (expanded) path of the directory where your script is located
+#   - Full (expanded) path of the directory where your script is located. Does not resolve symlinks.
+#     To resolve symlinks you can use Perl:
+#       __DIR__="$(perl -MCwd -e "print Cwd::abs_path shift" "$__DIR__")"
 #
 # * `$__FILE__'
-#   - Full (expanded) path of the script location
+#   - Full (expanded) path of the script location. Does not resolve symlinks.
 #
 # * `${POSITIONAL[@]}'
 #   - Array of positional arguments (including those not parsed by argparse.sh)
@@ -274,7 +274,8 @@ argparse.sh::parse_args() {
       opt_name \
       opt_flag \
       additional_opts \
-      bundled_flag value
+      bundled_flag \
+      value
     for (( i=0; i < ${#BOOLEAN_FLAGS[@]}; i++ )); do
       found_bool=
       opt_flag=${BOOLEAN_FLAGS[$i]}

@@ -26,7 +26,6 @@ execute_command() {
 }
 
 echo "Speed test for processing several flags (N = $N) ..."
-cmd="./usage-example.sh -n1 -n 2 infile.txt --numbers '-29' outfile.txt -fo 4 -vp2060"
 time for (( i=0; i < $N; i++ )); do
   execute_command >/dev/null
 done

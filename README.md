@@ -143,7 +143,7 @@ Additional helper functions and variables:
 * `$__DIR__`
   - Full path of the directory which contains the script.
 * `$__FILE__`
-  - Fill path of the script.
+  - Full path of the script.
 * `${POSITIONAL[@]}`
   - Array of additional positional arguments not parsed by argparse.sh
 * `print_help`

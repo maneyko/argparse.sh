@@ -43,7 +43,6 @@ cat << EOT
 ARG_INFILE:             $ARG_INFILE
 ARG_OUTFILE:            $ARG_OUTFILE
 ARG_PORT_NUMBER:        $ARG_PORT_NUMBER
-ARG_PERL_REGEX_PATTERN: $ARG_PERL_REGEX_PATTERN
 ARG_OUTPUTS:            $ARG_OUTPUTS
 ARG_VERBOSE:            $ARG_VERBOSE
 ARG_F:                  $ARG_F
@@ -53,6 +52,7 @@ ARG_PERCENTAGE:         $ARG_PERCENTAGE
 ARG_NUMBERS:            ${ARG_NUMBERS[@]}
 ARG_HOST:               ${ARG_HOST[@]}
 ARG_CHECKS:             $ARG_CHECKS
+ARG_PERL_REGEX_PATTERN: $ARG_PERL_REGEX_PATTERN
 ARG_QUIET:              $ARG_QUIET
 
 Script '${__FILE__##*/}' is in '$__DIR__'
