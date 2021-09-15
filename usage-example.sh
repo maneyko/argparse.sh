@@ -3,11 +3,13 @@
 source "${0%/*}/argparse.sh"
 
 ARG_NUMBERS=(1 2 3)
+ARG_PERL_REGEX_PATTERN='/[[:alnum:]]/'
+ARG_PERCENTAGE='100%'
 
 : ${HELP_WIDTH:=35}
 
-arg_positional "[infile]          [The file to parse]"
-arg_positional "[outfile]         [The output file.
+arg_positional "[infile]  [The file to parse]"
+arg_positional "[outfile] [The output file.
     The following image will be output to the specified file:
       ____
      /   /
@@ -16,32 +18,42 @@ arg_positional "[outfile]         [The output file.
   /---/   /
      /   /
     /___/]"
-arg_optional   "[port-number]        [p] [The port number (as a percent %)]"
-arg_optional   "[grep-regex-pattern] [g] [Grep regex pattern to use when searching files. Default: [[space]]+]"
+arg_optional   "[port-number]        [p] [The port number.]"
 arg_optional   "[outputs]            [o] [The number of outputs]"
-arg_boolean    "[verbose]            [] [Do verbose output]"
-arg_boolean    "   [flag]               [f] [My important flag]"
-arg_boolean    "[x] [no corresponding flag]"
-arg_array      "[]            [n] [Numbers to add together. Default is: [${ARG_NUMBERS[@]}]]"
+arg_boolean    "[verbose]            []  [Do verbose output]"
+arg_boolean    "                     [f] [Some flag]"
+arg_optional   "[delimiter]          [d] [Delimiter for input file.]"
+arg_boolean    "[version]            [v] [Show version information.]"
+arg_optional   "[percentage]             [Percent of file to process. Default: '$ARG_PERCENTAGE']"
+arg_array      "[numbers]            [n] [Numbers to add together. Default is: [${ARG_NUMBERS[@]}]]"
+arg_array      "[host]                   [Output host destinations. Example: '8.8.8.8']"
+arg_boolean    "[checks]             [c] [Perform validation checks.]"
+arg_optional   "[perl-regex-pattern] [r] [Perl regex pattern to use when searching files. Default: '$ARG_PERL_REGEX_PATTERN']"
+arg_boolean    "[quiet]              [q] [Execute quietly.]"
 
 read -d '' helptxt << EOT
 This file illustrates how argparse.sh can be used
 The help can be multiple lines
 EOT
 
-arg_help              "[$helptxt]"
+arg_help "[\n$helptxt]"
 parse_args
 
 cat << EOT
-infile:      $ARG_INFILE
-outfile:     $ARG_OUTFILE
-port-number: $ARG_PORT_NUMBER
-outputs:     $ARG_OUTPUTS
-verbose:     $ARG_VERBOSE
-flag:        $ARG_FLAG
-x:           $ARG_X
-numbers:     ${ARG_NUMBERS[@]}
-numbers:     ${ARG_N[@]}
+ARG_INFILE:             $ARG_INFILE
+ARG_OUTFILE:            $ARG_OUTFILE
+ARG_PORT_NUMBER:        $ARG_PORT_NUMBER
+ARG_PERL_REGEX_PATTERN: $ARG_PERL_REGEX_PATTERN
+ARG_OUTPUTS:            $ARG_OUTPUTS
+ARG_VERBOSE:            $ARG_VERBOSE
+ARG_F:                  $ARG_F
+ARG_DELIMITER:          $ARG_DELIMITER
+ARG_VERSION:            $ARG_VERSION
+ARG_PERCENTAGE:         $ARG_PERCENTAGE
+ARG_NUMBERS:            ${ARG_NUMBERS[@]}
+ARG_HOST:               ${ARG_HOST[@]}
+ARG_CHECKS:             $ARG_CHECKS
+ARG_QUIET:              $ARG_QUIET
 
-Script '${0##*/}' is in '$__DIR__'
+Script '${__FILE__##*/}' is in '$__DIR__'
 EOT

@@ -47,7 +47,7 @@
 #     # => true
 #
 #     if [ -n "$ARG_VERBOSE" ]; then
-#      echo 'Beginning processing...'
+#       echo 'Beginning processing...'
 #     fi
 #
 #     awk -F "$ARG_DELIMITER" "{print $ARG_EXPRESSION}" "$ARG_INPUT_FILE"
@@ -102,6 +102,9 @@
 # * `$__DIR__'
 #   - Full (expanded) path of the directory where your script is located
 #
+# * `$__FILE__'
+#   - Full (expanded) path of the script location
+#
 # * `${POSITIONAL[@]}'
 #   - Array of positional arguments (including those not parsed by argparse.sh)
 #
@@ -154,7 +157,7 @@ bprint() { printf "\033[1m$1\033[0m"; }
 #
 # @param number [Integer]
 # @param text   [String]
-cprint()   { printf "\033[38;5;$1m$2\033[0m"; }
+cprint()   {        printf "\033[38;5;$1m$2\033[0m"; }
 cprint_q() { cprint_string="\033[38;5;$1m$2\033[0m"; }
 
 optional_space_pat='([[:space:]]+)?'
@@ -255,16 +258,23 @@ get__dir__() {
 parse_args() {
   argparse.sh::parse_args "${ARGS_ARR[@]}"
   get__dir__
+  __FILE__="$__DIR__/${0##*/}"
 }
 
 # @param args_arr
 argparse.sh::parse_args() {
   while [[ $# -gt 0 ]]; do
-    local key=$1
-    local found_arg=
     local \
-      found_bool found_opt found_array_arg found_any_array_arg \
-      opt_name opt_flag additional_opts bundled_flag value
+      key=$1 \
+      found_arg= \
+      found_bool \
+      found_opt \
+      found_array_arg \
+      found_any_array_arg \
+      opt_name \
+      opt_flag \
+      additional_opts \
+      bundled_flag value
     for (( i=0; i < ${#BOOLEAN_FLAGS[@]}; i++ )); do
       found_bool=
       opt_flag=${BOOLEAN_FLAGS[$i]}
@@ -272,6 +282,11 @@ argparse.sh::parse_args() {
       case $key in
         --$opt_name)
           [[ -z $opt_name ]] && continue
+          found_bool=1
+          shift
+          ;;
+        -$opt_flag)
+          [[ -z $opt_flag ]] && continue
           found_bool=1
           shift
           ;;
@@ -331,7 +346,7 @@ argparse.sh::parse_args() {
               get_name_upper "${BOOLEAN_FLAGS[$j]}"
             fi
             printf -v "ARG_$name_upper" 'true'
-            additional_opts="${additional_opts%%$bundled_flag*}"
+            additional_opts="${additional_opts//$bundled_flag}"
           done
           ;;
       esac
@@ -470,40 +485,50 @@ print_help() {
     fi
   done
   for (( i=0; i < ${#OPTIONAL_FLAGS[@]}; i++ )); do
+    opt_name="${OPTIONAL_NAMES[$i]}"
+    : ${opt_name:="STRING"}
     if [[ -n ${OPTIONAL_FLAGS[$i]} ]]; then
-      printf "[-${OPTIONAL_FLAGS[$i]} ${OPTIONAL_NAMES[$i]}] "
+      printf "[-${OPTIONAL_FLAGS[$i]} $opt_name] "
     else
-      printf "[--${OPTIONAL_NAMES[$i]}=STRING] "
+      printf "[--$opt_name=STRING] "
     fi
   done
   for (( i=0; i < ${#ARRAY_FLAGS[@]}; i++ )); do
     opt_flag="${ARRAY_FLAGS[$i]}"
     opt_name="${ARRAY_NAMES[$i]}"
+    : ${opt_name:="STRING"}
     if [[ -n $opt_flag ]]; then
       printf "[-$opt_flag $opt_name -$opt_flag ...] "
     else
-      printf "[--$opt_name=ARG1 --$opt_flag=ARG2 ...] "
+      printf "[--$opt_name=ARG1 --$opt_name=ARG2 ...] "
     fi
   done
-  echo -e "\n$HELP_DESCRIPTION\n"
-  if [[ -n $POSITIONAL_NAMES ]]; then
-    printf "positional arguments:\n"
-    for (( i=0; i < ${#POSITIONAL_NAMES[@]}; i++ )); do
-      cprint_q 3 "${POSITIONAL_NAMES[$i]}"
-      j=
-      echo "${POSITIONAL_DESCRIPTIONS[$i]}" | while read; do
-        if [[ -z $j ]]; then
-          j=1
-          printf "  %-${X_POS}b ${REPLY//%/%%}\n" ${cprint_string}
-        else
-          printf "  %-${X_OPT_NL}s ${REPLY//%/%%}\n"
-        fi
-      done
-    done
+  if [[
+    ${#BOOLEAN_FLAGS[@]}  -gt 0 || ${#BOOLEAN_NAMES[@]}  -gt 0 ||
+    ${#OPTIONAL_FLAGS[@]} -gt 0 || ${#OPTIONAL_NAMES[@]} -gt 0 ||
+    ${#ARRAY_FLAGS[@]}    -gt 0 || ${#ARRAY_NAMES[@]}    -gt 0
+  ]]; then
+    has_any_optional_flags=true
+  else
+    unset has_any_optional_flags
   fi
-  [[ -z $BOOLEAN_NAMES && -z $OPTIONAL_NAMES && -z $ARRAY_NAMES ]] && return 0
-  [[ -n $POSITIONAL_NAMES ]] && printf "\n"
-  printf "optional arguments:\n"
+  echo -e "\n$HELP_DESCRIPTION"
+  [[ -n $has_any_optional_flags || ${#POSITIONAL_NAMES[@]} -gt 0 ]] && echo
+  [[ ${#POSITIONAL_NAMES[@]} -gt 0 ]] && echo "positional arguments:"
+  for (( i=0; i < ${#POSITIONAL_NAMES[@]}; i++ )); do
+    cprint_q 3 "${POSITIONAL_NAMES[$i]}"
+    j=
+    echo "${POSITIONAL_DESCRIPTIONS[$i]}" | while read; do
+      if [[ -z $j ]]; then
+        j=1
+        printf "  %-${X_POS}b ${REPLY//%/%%}\n" ${cprint_string}
+      else
+        printf "  %-${X_OPT_NL}s ${REPLY//%/%%}\n"
+      fi
+    done
+  done
+  [[ ${#POSITIONAL_NAMES[@]} -gt 0 ]] && echo
+  [[ -n $has_any_optional_flags ]] && echo "optional arguments:"
   for (( i=0; i < ${#BOOLEAN_FLAGS[@]}; i++ )); do
     if [[ -n ${BOOLEAN_FLAGS[$i]} ]]; then
       cprint_q 3 "-${BOOLEAN_FLAGS[$i]}"

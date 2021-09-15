@@ -1,6 +1,8 @@
 #!/bin/bash
 
-source "${0%/*}/argparse.sh"
+cd "${0%/*}/../"
+
+source "./argparse.sh"
 
 ARG_N_ITERATIONS=1000
 
@@ -11,10 +13,22 @@ parse_args
 
 N=$ARG_N_ITERATIONS
 
+execute_command() {
+  ./usage-example.sh \
+    -p2020 \
+    -cfr'/^\d+(\S+)\s+[[:alnum:]]/' \
+    --host google.com \
+    --outputs=3 \
+    --host amazon.com \
+    -qv \
+    --delimiter '/\s+/' \
+    --percentage=75%
+}
+
 echo "Speed test for processing several flags (N = $N) ..."
 cmd="./usage-example.sh -n1 -n 2 infile.txt --numbers '-29' outfile.txt -fo 4 -vp2060"
 time for (( i=0; i < $N; i++ )); do
-  $cmd >/dev/null
+  execute_command >/dev/null
 done
 
 if [[ -n $ARG_FULL ]]; then

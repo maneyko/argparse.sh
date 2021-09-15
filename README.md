@@ -45,7 +45,7 @@ echo $ARG_VERBOSE
 # => true
 
 if [ -n "$ARG_VERBOSE" ]; then
- echo 'Beginning processing...'
+  echo 'Beginning processing...'
 fi
 
 awk -F "$ARG_DELIMITER" "{print $ARG_EXPRESSION}" "$ARG_INPUT_FILE"
@@ -53,18 +53,25 @@ awk -F "$ARG_DELIMITER" "{print $ARG_EXPRESSION}" "$ARG_INPUT_FILE"
 
 To get a better idea of the usage in a real shell script, look at
 [usage-example.sh](https://github.com/maneyko/argparse.sh/blob/master/usage-example.sh).
-The script may be called like this:
+The script may be called like this (note that some default values are defined):
 
 ```bash
 ./usage-example.sh -fp2020 infile.txt -n2 --verbose outfile.txt --outputs 3 -n 4
 
-infile:      infile.txt
-outfile:     outfile.txt
-port-number: 2020
-outputs:     3
-verbose:     true
-flag:        true
-numbers:     2 4
+ARG_INFILE:             infile.txt
+ARG_OUTFILE:            outfile.txt
+ARG_PORT_NUMBER:        2020
+ARG_OUTPUTS:            3
+ARG_VERBOSE:            true
+ARG_F:                  true
+ARG_DELIMITER:
+ARG_VERSION:
+ARG_PERCENTAGE:         100%
+ARG_NUMBERS:            2 4
+ARG_HOST:
+ARG_CHECKS:
+ARG_PERL_REGEX_PATTERN: /[[:alnum:]]/
+ARG_QUIET:
 ```
 
 ## Installation
@@ -84,21 +91,6 @@ parse_args
 
 Another installation option is to include `argparse.sh` in the same directory in your script
 as is done in [Usage](#usage).
-
-## Advanced Usage
-
-Boolean flags and options that take values may be bundled together, like so:
-
-```bash
-$ ./usage-example.sh -vp2020 --outputs 4 infile.txt -fn 32
-infile:      infile.txt
-outfile:
-port-number: 2020
-outputs:     4
-verbose:     true
-flag:        true
-numbers:     32
-```
 
 ## Notes
 
@@ -150,6 +142,8 @@ Additional helper functions and variables:
 
 * `$__DIR__`
   - Full path of the directory which contains the script.
+* `$__FILE__`
+  - Fill path of the script.
 * `${POSITIONAL[@]}`
   - Array of additional positional arguments not parsed by argparse.sh
 * `print_help`
