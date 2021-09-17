@@ -14,7 +14,7 @@ parse_args
 N=$ARG_N_ITERATIONS
 
 execute_command() {
-  ./usage-example.sh \
+  ./advanced-usage-example.sh \
     -p2020 \
     -cfr'/^\d+(\S+)\s+[[:alnum:]]/' \
     --host google.com \

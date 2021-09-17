@@ -32,7 +32,7 @@
 #     arg_positional "[input-file]     [Input text file to process]"
 #     arg_boolean    "[verbose]    [v] [Print information about operations being performed]"
 #     arg_optional   "[delimiter]  [d] [Input file field separator. Default: '$ARG_DELIMITER']"
-#     arg_optional   "[expression] [e] [Expression passed directly to \`awk '{print ...}'\`]"
+#     arg_optional   "[expression] [e] [Expression passed directly to ( awk '{print ...}' )]"
 #     parse_args
 #
 #     echo $ARG_INFILE
@@ -275,7 +275,12 @@ argparse.sh::parse_args() {
       opt_flag \
       additional_opts \
       bundled_flag \
-      value
+      bundled_name \
+      value \
+      longest_match_o \
+      longest_index_o \
+      longest_match_a \
+      longest_index_o
     for (( i=0; i < ${#BOOLEAN_FLAGS[@]}; i++ )); do
       found_bool=
       opt_flag=${BOOLEAN_FLAGS[$i]}
@@ -295,47 +300,58 @@ argparse.sh::parse_args() {
           [[ -z $opt_flag ]] && continue
           found_bool=1
           shift
-          additional_opts="${key#-$opt_flag}"
+          additional_opts=${key#-$opt_flag}
+          [[ -z $additional_opts ]] && continue
+          additional_opts_len=${#additional_opts}
+
+          longest_match_o=0
+          longest_index_o=
           for (( j=0; j < ${#OPTIONAL_FLAGS[@]}; j++ )); do
-            [[ -z $additional_opts ]] && break
             bundled_flag=${OPTIONAL_FLAGS[$j]}
             [[ -z $bundled_flag ]] && continue
-            [[ $additional_opts != *$bundled_flag* ]] && continue
-            value="${additional_opts#*$bundled_flag}"
-            if [[ -z $value ]]; then
-              value="$1"
-              shift
+            if [[ $additional_opts =~ $bundled_flag(.*) ]]; then
+              substr=${BASH_REMATCH[1]}
+              len=${#substr}
+              if [[ $len -gt $longest_match_o ]]; then
+                longest_match_o=$len
+                longest_index_o=$j
+              fi
             fi
-            if [[ -n ${OPTIONAL_NAMES[$j]} ]]; then
-              get_name_upper "${OPTIONAL_NAMES[$j]}"
+          done
+
+          longest_match_a=0
+          longest_index_a=
+          for (( j=0; j < ${#ARRAY_FLAGS[@]}; j++ )); do
+            bundled_flag=${ARRAY_FLAGS[$j]}
+            [[ -z $bundled_flag ]] && continue
+            if [[ $additional_opts =~ $bundled_flag(.*) ]]; then
+              substr=${BASH_REMATCH[1]}
+              len=${#substr}
+              if [[ $len -gt $longest_match_a ]]; then
+                longest_match_a=$len
+                longest_index_a=$j
+              fi
+            fi
+          done
+
+          if [[ $longest_match_o -gt 0 || $longest_match_a -gt 0 ]]; then
+            if [[ $longest_match_o -ge $longest_match_a ]]; then
+              bundled_flag=${OPTIONAL_FLAGS[$longest_index_o]}
+              bundled_name=${OPTIONAL_NAMES[$longest_index_o]}
             else
-              get_name_upper "${OPTIONAL_FLAGS[$j]}"
+              bundled_flag=${ARRAY_FLAGS[$longest_index_a]}
+              bundled_name=${ARRAY_NAMES[$longest_index_a]}
+            fi
+            value="${additional_opts#*$bundled_flag}"
+            if [[ -n $bundled_name ]]; then
+              get_name_upper $bundled_name
+            else
+              get_name_upper $bundled_flag
             fi
             printf -v "ARG_$name_upper" -- "${value//%/%%}"
             additional_opts="${additional_opts%%$bundled_flag*}"
-          done
-          for (( j=0; j < ${#ARRAY_FLAGS[@]}; j++ )); do
-            [[ -z $additional_opts ]] && break
-            bundled_flag="${ARRAY_FLAGS[$j]}"
-            [[ -z $bundled_flag ]] && continue
-            [[ $additional_opts != *$bundled_flag* ]] && continue
-            value="${additional_opts#*$bundled_flag}"
-            if [[ -z $value ]]; then
-              value="$1"
-              shift
-            fi
-            if [[ -n ${ARRAY_NAMES[$j]} ]]; then
-              get_name_upper "${ARRAY_NAMES[$j]}"
-            else
-              get_name_upper "${ARRAY_FLAGS[$j]}"
-            fi
-            additional_opts="${additional_opts%%$bundled_flag*}"
-            if [[ -z $found_any_array_arg ]]; then
-              found_any_array_arg=1
-              unset "ARG_$name_upper"
-            fi
-            eval "ARG_$name_upper+=('$value')"
-          done
+          fi
+
           for (( j=0; j < ${#BOOLEAN_FLAGS[@]}; j++ )); do
             [[ -z $additional_opts ]] && break
             bundled_flag=${BOOLEAN_FLAGS[$j]}

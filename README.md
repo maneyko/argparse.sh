@@ -4,9 +4,8 @@ Bash script to parse command line arguments.
 
 ## Usage
 
-To use `argparse.sh`, source it in your script then let it parse your arguments for you.
-Let's say you are writing a script, `process_file.sh`, to process a file, and it is called
-with some arguments:
+To use `argparse.sh`, source it in your script then let it parse command line arguments for you.
+Let's say you are writing a script, `process_file.sh`, and it is called with some arguments:
 
 ```bash
 ./process_file.sh input-data.txt -v --delimiter=',' --expression='$1, $2'
@@ -52,11 +51,11 @@ awk -F "$ARG_DELIMITER" "{print $ARG_EXPRESSION}" "$ARG_INPUT_FILE"
 ```
 
 To get a better idea of the usage in a real shell script, look at
-[usage-example.sh](https://github.com/maneyko/argparse.sh/blob/master/usage-example.sh).
+[advanced-usage-example.sh](https://github.com/maneyko/argparse.sh/blob/master/advanced-usage-example.sh).
 The script may be called like this (note that some default values are defined):
 
 ```bash
-./usage-example.sh -fp2020 infile.txt -n2 --verbose outfile.txt --outputs 3 -n 4
+./advanced-usage-example.sh -fp2020 infile.txt -n2 --verbose outfile.txt --outputs 3 -n 4
 
 ARG_INFILE:             infile.txt
 ARG_OUTFILE:            outfile.txt

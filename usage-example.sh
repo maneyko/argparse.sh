@@ -1,59 +1,26 @@
 #!/bin/bash
 
-source "${0%/*}/argparse.sh"
+source "$(dirname "$0")/argparse.sh"
 
-ARG_NUMBERS=(1 2 3)
-ARG_PERL_REGEX_PATTERN='/[[:alnum:]]/'
-ARG_PERCENTAGE='100%'
+# Set default values.
+ARG_INPUT_FILE='/etc/shells'
+ARG_EXPRESSION="{ print }"
 
-: ${HELP_WIDTH:=35}
-
-arg_positional "[infile]  [The file to parse]"
-arg_positional "[outfile] [The output file.
-    The following image will be output to the specified file:
-      ____
-     /   /
-    /   /
-   /   /---/
-  /---/   /
-     /   /
-    /___/]"
-arg_optional   "[port-number]        [p] [The port number.]"
-arg_optional   "[outputs]            [o] [The number of outputs]"
-arg_boolean    "[verbose]            []  [Do verbose output]"
-arg_boolean    "                     [f] [Some flag]"
-arg_optional   "[delimiter]          [d] [Delimiter for input file.]"
-arg_boolean    "[version]            [v] [Show version information.]"
-arg_optional   "[percentage]             [Percent of file to process. Default: '$ARG_PERCENTAGE']"
-arg_array      "[numbers]            [n] [Numbers to add together. Default is: [${ARG_NUMBERS[@]}]]"
-arg_array      "[host]                   [Output host destinations. Example: '8.8.8.8']"
-arg_boolean    "[checks]             [c] [Perform validation checks.]"
-arg_optional   "[perl-regex-pattern] [r] [Perl regex pattern to use when searching files. Default: '$ARG_PERL_REGEX_PATTERN']"
-arg_boolean    "[quiet]              [q] [Execute quietly.]"
-
-read -d '' helptxt << EOT
-This file illustrates how argparse.sh can be used
-The help can be multiple lines
-EOT
-
-arg_help "[\n$helptxt]"
+arg_help       "[This script is for processing a text file]"
+arg_positional "[input-file]     [Input text file to read. Default: '$ARG_INPUT_FILE']"
+arg_boolean    "[verbose]    [v] [Print information about operations being performed.]"
+arg_optional   "[delimiter]  [d] [Input file field separator.]"
+arg_optional   "[expression] [e] [Expression passed directly to ( awk '...' ). Default: '$ARG_EXPRESSION']"
 parse_args
 
 cat << EOT
-ARG_INFILE:             $ARG_INFILE
-ARG_OUTFILE:            $ARG_OUTFILE
-ARG_PORT_NUMBER:        $ARG_PORT_NUMBER
-ARG_OUTPUTS:            $ARG_OUTPUTS
-ARG_VERBOSE:            $ARG_VERBOSE
-ARG_F:                  $ARG_F
-ARG_DELIMITER:          $ARG_DELIMITER
-ARG_VERSION:            $ARG_VERSION
-ARG_PERCENTAGE:         $ARG_PERCENTAGE
-ARG_NUMBERS:            ${ARG_NUMBERS[@]}
-ARG_HOST:               ${ARG_HOST[@]}
-ARG_CHECKS:             $ARG_CHECKS
-ARG_PERL_REGEX_PATTERN: $ARG_PERL_REGEX_PATTERN
-ARG_QUIET:              $ARG_QUIET
-
-Script '${__FILE__##*/}' is in '$__DIR__'
+ARG_INPUT_FILE: $ARG_INPUT_FILE
+ARG_DELIMITER:  $ARG_DELIMITER
+ARG_VERBOSE:    $ARG_VERBOSE
 EOT
+
+if [ -n "$ARG_VERBOSE" ]; then
+  echo "Contents of '$ARG_INPUT_FILE':"
+fi
+
+awk -F "$ARG_DELIMITER" "$ARG_EXPRESSION" "$ARG_INPUT_FILE"
