@@ -348,7 +348,7 @@ argparse.sh::parse_args() {
             else
               get_name_upper $bundled_flag
             fi
-            printf -v "ARG_$name_upper" -- "${value//%/%%}"
+            printf -v "ARG_$name_upper" -- "%b" "$value"
             additional_opts="${additional_opts%%$bundled_flag*}"
           fi
 
@@ -414,7 +414,7 @@ argparse.sh::parse_args() {
         else
           get_name_upper "$opt_flag"
         fi
-        printf -v "ARG_$name_upper" -- "${val//%/%%}"
+        printf -v "ARG_$name_upper" -- "%b" "$val"
       fi
     done
     for (( i=0; i < ${#ARRAY_NAMES[@]}; i++ )); do
@@ -473,7 +473,7 @@ argparse.sh::parse_args() {
     pos_name=${POSITIONAL_NAMES[$i]}
     [[ -z $pos_val ]] && continue
     get_name_upper "$pos_name"
-    printf -v "ARG_$name_upper" -- "${pos_val//%/%%}"
+    printf -v "ARG_$name_upper" -- "%b" "$pos_val"
   done
 
   if [[ -n $ARG_HELP ]]; then
@@ -529,7 +529,7 @@ print_help() {
   else
     unset has_any_optional_flags
   fi
-  echo -e "\n$HELP_DESCRIPTION"
+  printf -- "\n%b\n" "$HELP_DESCRIPTION"
   [[ -n $has_any_optional_flags || ${#POSITIONAL_NAMES[@]} -gt 0 ]] && echo
   [[ ${#POSITIONAL_NAMES[@]} -gt 0 ]] && echo "positional arguments:"
   for (( i=0; i < ${#POSITIONAL_NAMES[@]}; i++ )); do
@@ -538,9 +538,9 @@ print_help() {
     echo "${POSITIONAL_DESCRIPTIONS[$i]}" | while read; do
       if [[ -z $j ]]; then
         j=1
-        printf "  %-${X_POS}b ${REPLY//%/%%}\n" ${cprint_string}
+        printf -- "  %-${X_POS}b %b\n" "${cprint_string}" "$REPLY"
       else
-        printf "  %-${X_OPT_NL}s ${REPLY//%/%%}\n"
+        printf -- "  %-${X_OPT_NL}s %b\n" ' ' "$REPLY"
       fi
     done
   done
@@ -566,9 +566,9 @@ print_help() {
     echo "${BOOLEAN_DESCRIPTIONS[$i]}" | while read; do
       if [[ -z $j ]]; then
         j=1
-        printf "  %-${X_OPT}b ${REPLY//%/%%}\n" "$flag_disp $cprint_string"
+        printf -- "  %-${X_OPT}b %b\n" "$flag_disp $cprint_string" "$REPLY"
       else
-        printf "  %-${X_OPT_NL}s ${REPLY//%/%%}\n"
+        printf -- "  %-${X_OPT_NL}s %b\n" ' ' "$REPLY"
       fi
     done
   done
@@ -592,9 +592,9 @@ print_help() {
     echo "${OPTIONAL_DESCRIPTIONS[$i]}" | while read; do
       if [[ -z $j ]]; then
         j=1
-        printf "  %-${X_OPT}b ${REPLY//%/%%}\n" "$flag_disp $cprint_string"
+        printf -- "  %-${X_OPT}b %b\n" "$flag_disp $cprint_string" "$REPLY"
       else
-        printf "  %-${X_OPT_NL}s ${REPLY//%/%%}\n"
+        printf -- "  %-${X_OPT_NL}s %b\n" ' ' "$REPLY"
       fi
     done
   done
@@ -618,9 +618,9 @@ print_help() {
     echo "${ARRAY_DESCRIPTIONS[$i]}" | while read; do
       if [[ -z $j ]]; then
         j=1
-        printf "  %-${X_OPT}b ${REPLY//%/%%}\n" "$flag_disp $cprint_string"
+        printf -- "  %-${X_OPT}b %b\n" "$flag_disp $cprint_string" "$REPLY"
       else
-        printf "  %-${X_OPT_NL}s ${REPLY//%/%%}\n"
+        printf -- "  %-${X_OPT_NL}s %b\n" ' ' "$REPLY"
       fi
     done
   done
