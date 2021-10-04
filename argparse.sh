@@ -151,14 +151,15 @@ ARRAY_DESCRIPTIONS=()
 HELP_DESCRIPTION=
 
 # Bold print.
-bprint() { printf "\033[1m$1\033[0m"; }
+# @param text [String]
+bprint() { printf -- "%b" "\033[1m$1\033[0m"; }
 
 # Color print.
 #
 # @param number [Integer]
 # @param text   [String]
-cprint()   {        printf "\033[38;5;$1m$2\033[0m"; }
-cprint_q() { cprint_string="\033[38;5;$1m$2\033[0m"; }
+cprint()   { printf -- "%b" "\033[38;5;$1m$2\033[0m"; }
+cprint_q() {  cprint_string="\033[38;5;$1m$2\033[0m"; }
 
 optional_space_pat='([[:space:]]+)?'
 arg_name_pat="([0-9A-Za-z_-]{2,})"
