@@ -540,7 +540,7 @@ print_help() {
   for (( i=0; i < ${#POSITIONAL_NAMES[@]}; i++ )); do
     cprint_q 3 "${POSITIONAL_NAMES[$i]}"
     j=
-    echo "${POSITIONAL_DESCRIPTIONS[$i]}" | while read; do
+    echo "${POSITIONAL_DESCRIPTIONS[$i]}" | while read -r; do
       if [[ -z $j ]]; then
         j=1
         printf -- "  %-${X_POS}b %b\n" "${cprint_string}" "$REPLY"
@@ -568,7 +568,7 @@ print_help() {
       flag_disp="$flag_disp,"
     fi
     j=
-    echo "${BOOLEAN_DESCRIPTIONS[$i]}" | while read; do
+    echo "${BOOLEAN_DESCRIPTIONS[$i]}" | while read -r; do
       if [[ -z $j ]]; then
         j=1
         printf -- "  %-${X_OPT}b %b\n" "$flag_disp $cprint_string" "$REPLY"
@@ -594,7 +594,7 @@ print_help() {
       flag_disp="$flag_disp,"
     fi
     j=
-    echo "${OPTIONAL_DESCRIPTIONS[$i]}" | while read; do
+    echo "${OPTIONAL_DESCRIPTIONS[$i]}" | while read -r; do
       if [[ -z $j ]]; then
         j=1
         printf -- "  %-${X_OPT}b %b\n" "$flag_disp $cprint_string" "$REPLY"
@@ -620,7 +620,7 @@ print_help() {
       flag_disp="$flag_disp,"
     fi
     j=
-    echo "${ARRAY_DESCRIPTIONS[$i]}" | while read; do
+    echo "${ARRAY_DESCRIPTIONS[$i]}" | while read -r; do
       if [[ -z $j ]]; then
         j=1
         printf -- "  %-${X_OPT}b %b\n" "$flag_disp $cprint_string" "$REPLY"
