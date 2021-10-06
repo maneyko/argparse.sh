@@ -20,7 +20,7 @@ execute_command() {
     --host google.com \
     --outputs=3 \
     --host amazon.com \
-    -qv \
+    -qve 'print "hello world: $1" if /^\s+(.).*$/' \
     --delimiter '/\s+/' \
     --percentage=75%
 }

@@ -305,7 +305,7 @@ argparse.sh::parse_args() {
           [[ -z $additional_opts ]] && continue
           additional_opts_len=${#additional_opts}
 
-          longest_match_o=0
+          longest_match_o=-1
           longest_index_o=
           for (( j=0; j < ${#OPTIONAL_FLAGS[@]}; j++ )); do
             bundled_flag=${OPTIONAL_FLAGS[$j]}
@@ -320,7 +320,7 @@ argparse.sh::parse_args() {
             fi
           done
 
-          longest_match_a=0
+          longest_match_a=-1
           longest_index_a=
           for (( j=0; j < ${#ARRAY_FLAGS[@]}; j++ )); do
             bundled_flag=${ARRAY_FLAGS[$j]}
@@ -335,7 +335,7 @@ argparse.sh::parse_args() {
             fi
           done
 
-          if [[ $longest_match_o -gt 0 || $longest_match_a -gt 0 ]]; then
+          if [[ $longest_match_o -gt -1 || $longest_match_a -gt -1 ]]; then
             if [[ $longest_match_o -ge $longest_match_a ]]; then
               bundled_flag=${OPTIONAL_FLAGS[$longest_index_o]}
               bundled_name=${OPTIONAL_NAMES[$longest_index_o]}
@@ -348,6 +348,10 @@ argparse.sh::parse_args() {
               get_name_upper $bundled_name
             else
               get_name_upper $bundled_flag
+            fi
+            if [[ -z $value ]]; then
+              value="$1"
+              shift
             fi
             printf -v "ARG_$name_upper" -- "%b" "$value"
             additional_opts="${additional_opts%%$bundled_flag*}"

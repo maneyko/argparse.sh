@@ -30,6 +30,7 @@ arg_array      "[host]                   [Output host destinations. Example: '8.
 arg_boolean    "[checks]             [c] [Perform validation checks.]"
 arg_optional   "[perl-regex-pattern] [r] [Perl regex pattern to use when searching files. Default: '$ARG_PERL_REGEX_PATTERN']"
 arg_boolean    "[quiet]              [q] [Execute quietly.]"
+arg_optional   "                     [e] [Execute an arbitrary Perl command.]"
 
 read -d '' helptxt << EOT
 This file illustrates how argparse.sh can be used
@@ -54,6 +55,7 @@ ARG_HOST:               ${ARG_HOST[@]}
 ARG_CHECKS:             $ARG_CHECKS
 ARG_PERL_REGEX_PATTERN: $ARG_PERL_REGEX_PATTERN
 ARG_QUIET:              $ARG_QUIET
+ARG_E:                  $ARG_E
 
 Script '${__FILE__##*/}' is in '$__DIR__'
 EOT
