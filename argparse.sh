@@ -393,20 +393,6 @@ argparse.sh::parse_args() {
         additional_opts="${additional_opts%%$bundled_flag*}"
       fi
 
-      for (( j=0; j < ${#BOOLEAN_FLAGS[@]}; j++ )); do
-        [[ -z $additional_opts ]] && break
-        bundled_flag=${BOOLEAN_FLAGS[$j]}
-        [[ -z $bundled_flag ]] && continue
-        [[ $additional_opts != *$bundled_flag* ]] && continue
-        if [[ -n ${BOOLEAN_NAMES[$j]} ]]; then
-          get_name_upper "${BOOLEAN_NAMES[$j]}"
-        else
-          get_name_upper "${BOOLEAN_FLAGS[$j]}"
-        fi
-        printf -v "ARG_$name_upper" 'true'
-        additional_opts="${additional_opts//$bundled_flag}"
-      done
-
       if [[ $additional_opts =~ ($short_flag_regex) && -n ${BASH_REMATCH[1]} ]]; then
         matches=("${BASH_REMATCH[@]:2}")
         for (( i=0; i < ${#matches[@]}; i++ )); do
@@ -461,7 +447,7 @@ argparse.sh::parse_args() {
         fi
       done
 
-      if [[ $key =~ ^-$opt_flag(.*) && -n ${BASH_REMATCH[1]} ]]; then
+      if [[ $key =~ ^-$opt_flag(.+) ]]; then
         value="${BASH_REMATCH[1]}"
       elif [[ $key =~ ^-${opt_flag}$ ]]; then
         value="$1"
@@ -489,7 +475,7 @@ argparse.sh::parse_args() {
         fi
       done
 
-      if [[ $key =~ ^--${opt_name}=(.*) ]]; then
+      if [[ $key =~ ^--$opt_name=(.*) ]]; then
         value=${BASH_REMATCH[1]}
       elif [[ $key =~ ^--${opt_name}$ ]]; then
         value="$1"
@@ -520,7 +506,7 @@ argparse.sh::parse_args() {
         fi
       done
 
-      if [[ $key =~ ^-$opt_flag(.*) && -n ${BASH_REMATCH[1]} ]]; then
+      if [[ $key =~ ^-$opt_flag(.+) ]]; then
         value="${BASH_REMATCH[1]}"
       elif [[ $key =~ ^-${opt_flag}$ ]]; then
         value="$1"
