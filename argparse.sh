@@ -277,206 +277,297 @@ argparse.sh::parse_args() {
       additional_opts \
       bundled_flag \
       bundled_name \
-      value \
+      value= \
       longest_match_o \
       longest_index_o \
       longest_match_a \
       longest_index_o
+
+    long_flag_regex=""
+    for (( i=0; i < ${#BOOLEAN_NAMES[@]}; i++ )); do
+      long_flag_regex="$long_flag_regex(${BOOLEAN_NAMES[$i]})|"
+    done
+    long_flag_regex="${long_flag_regex%|}"
+
+    if [[ $key =~ ^--($long_flag_regex) && -n ${BASH_REMATCH[1]} ]]; then
+      matches=("${BASH_REMATCH[@]:2}")
+      for (( i=0; i < ${#matches[@]}; i++ )); do
+        if [[ -n ${matches[$i]} ]]; then
+          shift
+          opt_name=${BOOLEAN_NAMES[$i]}
+          break
+        fi
+      done
+      get_name_upper "$opt_name"
+      printf -v "ARG_$name_upper" 'true'
+      continue
+    fi
+
+    short_flag_regex=""
     for (( i=0; i < ${#BOOLEAN_FLAGS[@]}; i++ )); do
-      found_bool=
-      opt_flag=${BOOLEAN_FLAGS[$i]}
-      opt_name=${BOOLEAN_NAMES[$i]}
-      case $key in
-        --$opt_name)
-          [[ -z $opt_name ]] && continue
-          found_bool=1
-          shift
-          ;;
-        -$opt_flag)
-          [[ -z $opt_flag ]] && continue
-          found_bool=1
-          shift
-          ;;
-        -$opt_flag*)
-          [[ -z $opt_flag ]] && continue
-          found_bool=1
-          shift
-          additional_opts=${key#-$opt_flag}
-          [[ -z $additional_opts ]] && continue
-          additional_opts_len=${#additional_opts}
+      short_flag_regex="$short_flag_regex(${BOOLEAN_FLAGS[$i]})|"
+    done
+    short_flag_regex="${short_flag_regex%|}"
 
-          longest_match_o=-1
-          longest_index_o=
-          for (( j=0; j < ${#OPTIONAL_FLAGS[@]}; j++ )); do
-            bundled_flag=${OPTIONAL_FLAGS[$j]}
-            [[ -z $bundled_flag ]] && continue
-            if [[ $additional_opts =~ $bundled_flag(.*) ]]; then
-              substr=${BASH_REMATCH[1]}
-              len=${#substr}
-              if [[ $len -gt $longest_match_o ]]; then
-                longest_match_o=$len
-                longest_index_o=$j
-              fi
-            fi
-          done
+    if [[ $key =~ ^-($short_flag_regex) && -n ${BASH_REMATCH[1]} ]]; then
+      matches=("${BASH_REMATCH[@]:2}")
+      for (( i=0; i < ${#matches[@]}; i++ )); do
+        if [[ -n ${matches[$i]} ]]; then
+          shift
+          opt_name=${BOOLEAN_NAMES[$i]}
+          opt_flag=${BOOLEAN_FLAGS[$i]}
+          break
+        fi
+      done
 
-          longest_match_a=-1
-          longest_index_a=
-          for (( j=0; j < ${#ARRAY_FLAGS[@]}; j++ )); do
-            bundled_flag=${ARRAY_FLAGS[$j]}
-            [[ -z $bundled_flag ]] && continue
-            if [[ $additional_opts =~ $bundled_flag(.*) ]]; then
-              substr=${BASH_REMATCH[1]}
-              len=${#substr}
-              if [[ $len -gt $longest_match_a ]]; then
-                longest_match_a=$len
-                longest_index_a=$j
-              fi
-            fi
-          done
+      if [[ -z $opt_name ]]; then
+        get_name_upper "$opt_flag"
+      else
+        get_name_upper "$opt_name"
+      fi
+      printf -v "ARG_$name_upper" 'true'
+      additional_opts=${key#-$opt_flag}
+      if [[ -z $additional_opts ]]; then
+        continue
+      else
+        # Bundled arguments
 
-          if [[ $longest_match_o -gt -1 || $longest_match_a -gt -1 ]]; then
-            if [[ $longest_match_o -ge $longest_match_a ]]; then
-              bundled_flag=${OPTIONAL_FLAGS[$longest_index_o]}
-              bundled_name=${OPTIONAL_NAMES[$longest_index_o]}
-            else
-              bundled_flag=${ARRAY_FLAGS[$longest_index_a]}
-              bundled_name=${ARRAY_NAMES[$longest_index_a]}
+        longest_match_o=-1
+        longest_index_o=
+        for (( j=0; j < ${#OPTIONAL_FLAGS[@]}; j++ )); do
+          bundled_flag=${OPTIONAL_FLAGS[$j]}
+          [[ -z $bundled_flag ]] && continue
+          if [[ $additional_opts =~ $bundled_flag(.*) ]]; then
+            substr=${BASH_REMATCH[1]}
+            len=${#substr}
+            if [[ $len -gt $longest_match_o ]]; then
+              longest_match_o=$len
+              longest_index_o=$j
             fi
-            value="${additional_opts#*$bundled_flag}"
-            if [[ -n $bundled_name ]]; then
-              get_name_upper $bundled_name
-            else
-              get_name_upper $bundled_flag
-            fi
-            if [[ -z $value ]]; then
-              value="$1"
-              shift
-            fi
-            printf -v "ARG_$name_upper" -- "%b" "$value"
-            additional_opts="${additional_opts%%$bundled_flag*}"
           fi
+        done
 
-          for (( j=0; j < ${#BOOLEAN_FLAGS[@]}; j++ )); do
-            [[ -z $additional_opts ]] && break
-            bundled_flag=${BOOLEAN_FLAGS[$j]}
-            [[ -z $bundled_flag ]] && continue
-            [[ $additional_opts != *$bundled_flag* ]] && continue
-            if [[ -n ${BOOLEAN_NAMES[$j]} ]]; then
-              get_name_upper "${BOOLEAN_NAMES[$j]}"
-            else
-              get_name_upper "${BOOLEAN_FLAGS[$j]}"
+        longest_match_a=-1
+        longest_index_a=
+        for (( j=0; j < ${#ARRAY_FLAGS[@]}; j++ )); do
+          bundled_flag=${ARRAY_FLAGS[$j]}
+          [[ -z $bundled_flag ]] && continue
+          if [[ $additional_opts =~ $bundled_flag(.*) ]]; then
+            substr=${BASH_REMATCH[1]}
+            len=${#substr}
+            if [[ $len -gt $longest_match_a ]]; then
+              longest_match_a=$len
+              longest_index_a=$j
             fi
-            printf -v "ARG_$name_upper" 'true'
-            additional_opts="${additional_opts//$bundled_flag}"
-          done
-          ;;
-      esac
-      if [[ -n $found_bool ]]; then
-        found_arg=1
-        if [[ -n "$opt_name" ]]; then
-          get_name_upper "$opt_name"
+          fi
+        done
+
+        if [[ $longest_match_o -gt -1 || $longest_match_a -gt -1 ]]; then
+          if [[ $longest_match_o -ge $longest_match_a ]]; then
+            bundled_flag=${OPTIONAL_FLAGS[$longest_index_o]}
+            bundled_name=${OPTIONAL_NAMES[$longest_index_o]}
+          else
+            bundled_flag=${ARRAY_FLAGS[$longest_index_a]}
+            bundled_name=${ARRAY_NAMES[$longest_index_a]}
+          fi
+          value="${additional_opts#*$bundled_flag}"
+          if [[ -n $bundled_name ]]; then
+            get_name_upper $bundled_name
+          else
+            get_name_upper $bundled_flag
+          fi
+          if [[ -z $value ]]; then
+            value="$1"
+            shift
+          fi
+          printf -v "ARG_$name_upper" -- "%b" "$value"
+          additional_opts="${additional_opts%%$bundled_flag*}"
+        fi
+      fi
+
+      for (( j=0; j < ${#BOOLEAN_FLAGS[@]}; j++ )); do
+        [[ -z $additional_opts ]] && break
+        bundled_flag=${BOOLEAN_FLAGS[$j]}
+        [[ -z $bundled_flag ]] && continue
+        [[ $additional_opts != *$bundled_flag* ]] && continue
+        if [[ -n ${BOOLEAN_NAMES[$j]} ]]; then
+          get_name_upper "${BOOLEAN_NAMES[$j]}"
         else
-          get_name_upper "$opt_flag"
+          get_name_upper "${BOOLEAN_FLAGS[$j]}"
         fi
         printf -v "ARG_$name_upper" 'true'
+        additional_opts="${additional_opts//$bundled_flag}"
+      done
+
+      if [[ $additional_opts =~ ($short_flag_regex) && -n ${BASH_REMATCH[1]} ]]; then
+        matches=("${BASH_REMATCH[@]:2}")
+        for (( i=0; i < ${#matches[@]}; i++ )); do
+          if [[ -n ${matches[$i]} ]]; then
+            opt_name=${BOOLEAN_NAMES[$i]}
+            opt_flag=${BOOLEAN_FLAGS[$i]}
+            if [[ -z $opt_name ]]; then
+              get_name_upper "$opt_flag"
+            else
+              get_name_upper "$opt_name"
+            fi
+            printf -v "ARG_$name_upper" 'true'
+          fi
+        done
       fi
-    done
-    for (( i=0; i < ${#OPTIONAL_FLAGS[@]}; i++ )); do
-      found_opt=
-      opt_flag=${OPTIONAL_FLAGS[$i]}
-      opt_name=${OPTIONAL_NAMES[$i]}
-      case $key in
-        -$opt_flag)
-          [[ -z $opt_flag ]] && continue
-          found_opt=1
-          val="$2"
-          shift; shift
-          ;;
-        --$opt_name)
-          [[ -z $opt_name ]] && continue
-          found_opt=1
-          val="$2"
-          shift; shift
-          ;;
-        --$opt_name=*)
-          [[ -z $opt_name ]] && continue
-          found_opt=1
-          val="${key#--$opt_name=}"
-          shift
-          ;;
-        -$opt_flag*)
-          [[ -z $opt_flag ]] && continue
-          found_opt=1
-          val="${key#-$opt_flag}"
-          shift
-          ;;
-      esac
-      if [[ -n $found_opt ]]; then
-        found_arg=1
-        if [[ -n $opt_name ]]; then
-          get_name_upper "$opt_name"
-        else
-          get_name_upper "$opt_flag"
-        fi
-        printf -v "ARG_$name_upper" -- "%b" "$val"
-      fi
-    done
-    for (( i=0; i < ${#ARRAY_NAMES[@]}; i++ )); do
-      found_array_arg=
-      opt_flag=${ARRAY_FLAGS[$i]}
-      opt_name=${ARRAY_NAMES[$i]}
-      case $key in
-        -$opt_flag)
-          [[ -z $opt_flag ]] && continue
-          found_array_arg=1
-          val="$2"
-          shift; shift
-          ;;
-        --$opt_name)
-          [[ -z $opt_name ]] && continue
-          found_array_arg=1
-          val="$2"
-          shift; shift
-          ;;
-        --$opt_name=*)
-          [[ -z $opt_name ]] && continue
-          found_array_arg=1
-          val="${key#--$opt_name=}"
-          shift
-          ;;
-        -$opt_flag*)
-          [[ -z $opt_flag ]] && continue
-          found_array_arg=1
-          val="${key#-$opt_flag}"
-          shift
-          ;;
-      esac
-      if [[ -n $found_array_arg ]]; then
-        if [[ -n $opt_name ]]; then
-          get_name_upper "$opt_name"
-        else
-          get_name_upper "$opt_flag"
-        fi
-        if [[ -z $found_any_array_arg ]]; then
-          found_any_array_arg=1
-          unset "ARG_$name_upper"
-        fi
-        eval "ARG_$name_upper+=('$val')"
-        found_arg=1
-      fi
-    done
-    if [[ -z $found_arg ]]; then
-      POSITIONAL+=("$1")
-      shift
+      continue
     fi
+
+
+    long_opt_regex=""
+    for (( i=0; i < ${#OPTIONAL_NAMES[@]}; i++ )); do
+      long_opt_regex="$long_opt_regex(${OPTIONAL_NAMES[$i]})|"
+    done
+    long_opt_regex="${long_opt_regex%|}"
+
+    if [[ $key =~ ^--($long_opt_regex) && -n ${BASH_REMATCH[1]} ]]; then
+      matches=("${BASH_REMATCH[@]:2}")
+      for (( i=0; i < ${#matches[@]}; i++ )); do
+        if [[ -n ${matches[$i]} ]]; then
+          shift
+          opt_name=${OPTIONAL_NAMES[$i]}
+          continue
+        fi
+      done
+
+      if [[ $key =~ ^--$opt_name=(.*) ]]; then
+        value=${BASH_REMATCH[1]}
+      elif [[ $key =~ ^--${opt_name}$ ]]; then
+        value="$1"
+        shift
+      else
+        continue
+      fi
+
+      get_name_upper "$opt_name"
+      printf -v "ARG_$name_upper" -- "%b" "$value"
+      continue
+    fi
+
+    short_opt_regex=""
+    for (( i=0; i < ${#OPTIONAL_FLAGS[@]}; i++ )); do
+      short_opt_regex="$short_opt_regex(${OPTIONAL_FLAGS[$i]})|"
+    done
+    short_opt_regex="${short_opt_regex%|}"
+
+    if [[ $key =~ ^-($short_opt_regex) && -n ${BASH_REMATCH[1]} ]]; then
+      matches=("${BASH_REMATCH[@]:2}")
+      for (( i=0; i < ${#matches[@]}; i++ )); do
+        if [[ -n ${matches[$i]} ]]; then
+          shift
+          opt_name=${OPTIONAL_NAMES[$i]}
+          opt_flag=${OPTIONAL_FLAGS[$i]}
+          break
+        fi
+      done
+
+      if [[ -z $opt_name ]]; then
+        get_name_upper "$opt_flag"
+      else
+        get_name_upper "$opt_name"
+      fi
+      if [[ $key =~ ^-$opt_flag(.*) && -n ${BASH_REMATCH[1]} ]]; then
+        value="${BASH_REMATCH[1]}"
+      elif [[ $key =~ ^-${opt_flag}$ ]]; then
+        value="$1"
+        shift
+      else
+        continue
+      fi
+      printf -v "ARG_$name_upper" -- "%b" "$value"
+      continue
+    fi
+
+    long_arr_regex=""
+    for (( i=0; i < ${#ARRAY_NAMES[@]}; i++ )); do
+      long_arr_regex="$long_arr_regex(${ARRAY_NAMES[$i]})|"
+    done
+    long_arr_regex="${long_arr_regex%|}"
+
+    if [[ $key =~ ^--($long_arr_regex) && -n ${BASH_REMATCH[1]} ]]; then
+      matches=("${BASH_REMATCH[@]:2}")
+      for (( i=0; i < ${#matches[@]}; i++ )); do
+        if [[ -n ${matches[$i]} ]]; then
+          shift
+          opt_name=${ARRAY_NAMES[$i]}
+          break
+        fi
+      done
+
+      if [[ $key =~ ^--${opt_name}=(.*) ]]; then
+        value=${BASH_REMATCH[1]}
+      elif [[ $key =~ ^--${opt_name}$ ]]; then
+        value="$1"
+        shift
+      else
+        continue
+      fi
+      get_name_upper "$opt_name"
+
+      found_name="_found_$name_upper"
+
+      if [[ -z ${!found_name} ]]; then
+        unset "ARG_$name_upper"
+        printf -v "$found_name" 'true'
+      fi
+      eval "ARG_$name_upper+=('$value')"
+      continue
+    fi
+
+    short_arr_regex=""
+    for (( i=0; i < ${#ARRAY_FLAGS[@]}; i++ )); do
+      short_arr_regex="$short_arr_regex(${ARRAY_FLAGS[$i]})|"
+    done
+    short_arr_regex="${short_arr_regex%|}"
+
+    if [[ $key =~ ^-($short_arr_regex) && -n ${BASH_REMATCH[1]} ]]; then
+      matches=("${BASH_REMATCH[@]:2}")
+      for (( i=0; i < ${#matches[@]}; i++ )); do
+        if [[ -n ${matches[$i]} ]]; then
+          shift
+          opt_name=${ARRAY_NAMES[$i]}
+          opt_flag=${ARRAY_FLAGS[$i]}
+          break
+        fi
+      done
+
+      if [[ -z $opt_name ]]; then
+        get_name_upper "$opt_flag"
+      else
+        get_name_upper "$opt_name"
+      fi
+
+      if [[ $key =~ ^-$opt_flag(.*) && -n ${BASH_REMATCH[1]} ]]; then
+        value="${BASH_REMATCH[1]}"
+      elif [[ $key =~ ^-${opt_flag}$ ]]; then
+        value="$1"
+        shift
+      else
+        continue
+      fi
+      found_name="_found_$name_upper"
+
+      if [[ -z ${!found_name} ]]; then
+        unset "ARG_$name_upper"
+        printf -v "$found_name" 'true'
+      fi
+      eval "ARG_$name_upper+=('$value')"
+      continue
+    fi
+
+    POSITIONAL+=("$key")
+    shift
   done
+
   set -- "${POSITIONAL[@]}"
 
   for (( i=0; i < ${#POSITIONAL[@]}; i++ )); do
     pos_val=${POSITIONAL[$i]}
     pos_name=${POSITIONAL_NAMES[$i]}
-    [[ -z $pos_val ]] && continue
     get_name_upper "$pos_name"
     printf -v "ARG_$name_upper" -- "%b" "$pos_val"
   done
