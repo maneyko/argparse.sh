@@ -267,37 +267,49 @@ argparse.sh::parse_args() {
 
   long_flag_regex=""
   for (( i=0; i < ${#BOOLEAN_NAMES[@]}; i++ )); do
-    long_flag_regex="$long_flag_regex(${BOOLEAN_NAMES[$i]})|"
+    opt_flag="${BOOLEAN_NAMES[$i]}"
+    : ${opt_flag:='^$'}
+    long_flag_regex="$long_flag_regex($opt_flag)|"
   done
   long_flag_regex="${long_flag_regex%|}"
 
   short_flag_regex=""
   for (( i=0; i < ${#BOOLEAN_FLAGS[@]}; i++ )); do
-    short_flag_regex="$short_flag_regex(${BOOLEAN_FLAGS[$i]})|"
+    opt_flag="${BOOLEAN_FLAGS[$i]}"
+    : ${opt_flag:='^$'}
+    short_flag_regex="$short_flag_regex($opt_flag)|"
   done
   short_flag_regex="${short_flag_regex%|}"
 
   long_opt_regex=""
   for (( i=0; i < ${#OPTIONAL_NAMES[@]}; i++ )); do
-    long_opt_regex="$long_opt_regex(${OPTIONAL_NAMES[$i]})|"
+    opt_flag="${OPTIONAL_NAMES[$i]}"
+    : ${opt_flag:='^$'}
+    long_opt_regex="$long_opt_regex($opt_flag)|"
   done
   long_opt_regex="${long_opt_regex%|}"
 
   short_opt_regex=""
   for (( i=0; i < ${#OPTIONAL_FLAGS[@]}; i++ )); do
-    short_opt_regex="$short_opt_regex(${OPTIONAL_FLAGS[$i]})|"
+    opt_flag="${OPTIONAL_FLAGS[$i]}"
+    : ${opt_flag:='^$'}
+    short_opt_regex="$short_opt_regex($opt_flag)|"
   done
   short_opt_regex="${short_opt_regex%|}"
 
   long_arr_regex=""
   for (( i=0; i < ${#ARRAY_NAMES[@]}; i++ )); do
-    long_arr_regex="$long_arr_regex(${ARRAY_NAMES[$i]})|"
+    opt_flag="${ARRAY_NAMES[$i]}"
+    : ${opt_flag:='^$'}
+    long_arr_regex="$long_arr_regex($opt_flag)|"
   done
   long_arr_regex="${long_arr_regex%|}"
 
   short_arr_regex=""
   for (( i=0; i < ${#ARRAY_FLAGS[@]}; i++ )); do
-    short_arr_regex="$short_arr_regex(${ARRAY_FLAGS[$i]})|"
+    opt_flag="${ARRAY_FLAGS[$i]}"
+    : ${opt_flag:='^$'}
+    short_arr_regex="$short_arr_regex($opt_flag)|"
   done
   short_arr_regex="${short_arr_regex%|}"
 
@@ -305,7 +317,7 @@ argparse.sh::parse_args() {
     key=$1
     value=
 
-    if [[ $key =~ ^--($long_flag_regex) && -n ${BASH_REMATCH[1]} ]]; then
+    if [[ $key =~ ^--($long_flag_regex)$ && -n ${BASH_REMATCH[1]} ]]; then
       shift
       matches=("${BASH_REMATCH[@]:2}")
       for (( i=0; i < ${#matches[@]}; i++ )); do
@@ -324,8 +336,8 @@ argparse.sh::parse_args() {
       matches=("${BASH_REMATCH[@]:2}")
       for (( i=0; i < ${#matches[@]}; i++ )); do
         if [[ -n ${matches[$i]} ]]; then
-          opt_name=${BOOLEAN_NAMES[$i]}
           opt_flag=${BOOLEAN_FLAGS[$i]}
+          opt_name=${BOOLEAN_NAMES[$i]}
           break
         fi
       done
@@ -341,45 +353,49 @@ argparse.sh::parse_args() {
 
       # Bundled arguments
 
-      longest_match_o=-1
-      longest_index_o=
-      for (( j=0; j < ${#OPTIONAL_FLAGS[@]}; j++ )); do
-        bundled_flag=${OPTIONAL_FLAGS[$j]}
-        [[ -z $bundled_flag ]] && continue
-        if [[ $additional_opts =~ $bundled_flag(.*) ]]; then
-          substr=${BASH_REMATCH[1]}
-          len=${#substr}
-          if [[ $len -gt $longest_match_o ]]; then
-            longest_match_o=$len
-            longest_index_o=$j
-          fi
-        fi
-      done
+      longest_match_o_n=-1
+      longest_match_a_n=-1
 
-      longest_match_a=-1
-      longest_index_a=
-      for (( j=0; j < ${#ARRAY_FLAGS[@]}; j++ )); do
-        bundled_flag=${ARRAY_FLAGS[$j]}
-        [[ -z $bundled_flag ]] && continue
-        if [[ $additional_opts =~ $bundled_flag(.*) ]]; then
-          substr=${BASH_REMATCH[1]}
-          len=${#substr}
-          if [[ $len -gt $longest_match_a ]]; then
-            longest_match_a=$len
-            longest_index_a=$j
-          fi
-        fi
-      done
+      if [[ $additional_opts =~ ($short_opt_regex)(.*) && -n ${BASH_REMATCH[1]} ]]; then
+        optional_count=${#OPTIONAL_FLAGS[@]}
+        longest_match_o=${BASH_REMATCH[$(($optional_count + 2))]}
+        longest_match_o_n=${#longest_match_o}
 
-      if [[ $longest_match_o -gt -1 || $longest_match_a -gt -1 ]]; then
-        if [[ $longest_match_o -ge $longest_match_a ]]; then
-          bundled_flag=${OPTIONAL_FLAGS[$longest_index_o]}
-          bundled_name=${OPTIONAL_NAMES[$longest_index_o]}
+        matches=("${BASH_REMATCH[@]:2}")
+        for (( i=0; i < ${#matches[@]}; i++ )); do
+          if [[ -n ${matches[$i]} ]]; then
+            opt_flag_o=${OPTIONAL_FLAGS[$i]}
+            opt_name_o=${OPTIONAL_NAMES[$i]}
+            break
+          fi
+        done
+      fi
+
+      if [[ $additional_opts =~ ($short_arr_regex)(.*) && -n ${BASH_REMATCH[1]} ]]; then
+        array_count=${#ARRAY_FLAGS[@]}
+        longest_match_a=${BASH_REMATCH[$(($array_count + 2))]}
+        longest_match_a_n=${#longest_match_a}
+
+        matches=("${BASH_REMATCH[@]:2}")
+        for (( i=0; i < ${#matches[@]}; i++ )); do
+          if [[ -n ${matches[$i]} ]]; then
+            opt_flag_a=${ARRAY_FLAGS[$i]}
+            opt_name_a=${ARRAY_NAMES[$i]}
+            break
+          fi
+        done
+      fi
+
+      if [[ $longest_match_o_n -gt -1 || $longest_match_a_n -gt -1 ]]; then
+        if [[ $longest_match_o_n -ge $longest_match_a_n ]]; then
+          bundled_flag=$opt_flag_o
+          bundled_name=$opt_name_o
+          value=$longest_match_o
         else
-          bundled_flag=${ARRAY_FLAGS[$longest_index_a]}
-          bundled_name=${ARRAY_NAMES[$longest_index_a]}
+          bundled_flag=$opt_flag_a
+          bundled_name=$opt_name_a
+          value=$longest_match_a
         fi
-        value="${additional_opts#*$bundled_flag}"
         if [[ -n $bundled_name ]]; then
           get_name_upper $bundled_name
         else
@@ -389,8 +405,19 @@ argparse.sh::parse_args() {
           value="$1"
           shift
         fi
-        printf -v "ARG_$name_upper" -- "%b" "$value"
         additional_opts="${additional_opts%%$bundled_flag*}"
+
+        if [[ $longest_match_a_n -gt $longest_match_o_n ]]; then
+          found_name="_found_$name_upper"
+
+          if [[ -z ${!found_name} ]]; then
+            unset "ARG_$name_upper"
+            printf -v "$found_name" 'true'
+          fi
+          eval "ARG_$name_upper+=('$value')"
+        else
+          printf -v "ARG_$name_upper" -- "%b" "$value"
+        fi
       fi
 
       if [[ $additional_opts =~ ($short_flag_regex) && -n ${BASH_REMATCH[1]} ]]; then
