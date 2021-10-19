@@ -259,7 +259,7 @@ get__dir__() {
 parse_args() {
   argparse.sh::parse_args "${ARGS_ARR[@]}"
   get__dir__
-  __FILE__="$__DIR__/${0##*/}"
+  __FILE__=$__DIR__/${0##*/}
 }
 
 # @param args_arr
@@ -274,6 +274,7 @@ argparse.sh::parse_args() {
     long_flag_regex="$long_flag_regex($opt_flag)|"
   done
   long_flag_regex=${long_flag_regex%|}
+  : ${long_flag_regex:=($impossible_regex)}
 
   short_flag_regex=
   for (( i=0; i < ${#BOOLEAN_FLAGS[@]}; i++ )); do
@@ -282,6 +283,7 @@ argparse.sh::parse_args() {
     short_flag_regex="$short_flag_regex($opt_flag)|"
   done
   short_flag_regex=${short_flag_regex%|}
+  : ${short_flag_regex:=($impossible_regex)}
 
   long_opt_regex=
   for (( i=0; i < ${#OPTIONAL_NAMES[@]}; i++ )); do
@@ -290,6 +292,7 @@ argparse.sh::parse_args() {
     long_opt_regex="$long_opt_regex($opt_flag)|"
   done
   long_opt_regex=${long_opt_regex%|}
+  : ${long_opt_regex:=($impossible_regex)}
 
   short_opt_regex=
   for (( i=0; i < ${#OPTIONAL_FLAGS[@]}; i++ )); do
@@ -298,6 +301,7 @@ argparse.sh::parse_args() {
     short_opt_regex="$short_opt_regex($opt_flag)|"
   done
   short_opt_regex=${short_opt_regex%|}
+  : ${short_opt_regex:=($impossible_regex)}
 
   long_arr_regex=
   for (( i=0; i < ${#ARRAY_NAMES[@]}; i++ )); do
@@ -306,6 +310,7 @@ argparse.sh::parse_args() {
     long_arr_regex="$long_arr_regex($opt_flag)|"
   done
   long_arr_regex=${long_arr_regex%|}
+  : ${long_arr_regex:=($impossible_regex)}
 
   short_arr_regex=
   for (( i=0; i < ${#ARRAY_FLAGS[@]}; i++ )); do
@@ -314,12 +319,13 @@ argparse.sh::parse_args() {
     short_arr_regex="$short_arr_regex($opt_flag)|"
   done
   short_arr_regex=${short_arr_regex%|}
+  : ${short_arr_regex:=($impossible_regex)}
 
   while [[ $# -gt 0 ]]; do
     key=$1
     value=
 
-    if [[ $key =~ ^--($long_flag_regex)$ && -n ${BASH_REMATCH[1]} ]]; then
+    if [[ $key =~ ^--($long_flag_regex)$ ]]; then
       shift
       matches=("${BASH_REMATCH[@]:2}")
       for (( i=0; i < ${#matches[@]}; i++ )); do
@@ -333,7 +339,7 @@ argparse.sh::parse_args() {
       continue
     fi
 
-    if [[ $key =~ ^-($short_flag_regex) && -n ${BASH_REMATCH[1]} ]]; then
+    if [[ $key =~ ^-($short_flag_regex) ]]; then
       shift
       matches=("${BASH_REMATCH[@]:2}")
       for (( i=0; i < ${#matches[@]}; i++ )); do
@@ -358,7 +364,7 @@ argparse.sh::parse_args() {
       longest_match_o_n=-1
       longest_match_a_n=-1
 
-      if [[ $additional_opts =~ ($short_opt_regex)(.*) && -n ${BASH_REMATCH[1]} ]]; then
+      if [[ $additional_opts =~ ($short_opt_regex)(.*) ]]; then
         optional_count=${#OPTIONAL_FLAGS[@]}
         longest_match_o=${BASH_REMATCH[$(($optional_count + 2))]}
         longest_match_o_n=${#longest_match_o}
@@ -373,7 +379,7 @@ argparse.sh::parse_args() {
         done
       fi
 
-      if [[ $additional_opts =~ ($short_arr_regex)(.*) && -n ${BASH_REMATCH[1]} ]]; then
+      if [[ $additional_opts =~ ($short_arr_regex)(.*) ]]; then
         array_count=${#ARRAY_FLAGS[@]}
         longest_match_a=${BASH_REMATCH[$(($array_count + 2))]}
         longest_match_a_n=${#longest_match_a}
@@ -422,7 +428,7 @@ argparse.sh::parse_args() {
         fi
       fi
 
-      if [[ $additional_opts =~ ($short_flag_regex) && -n ${BASH_REMATCH[1]} ]]; then
+      if [[ $additional_opts =~ ($short_flag_regex) ]]; then
         matches=("${BASH_REMATCH[@]:2}")
         for (( i=0; i < ${#matches[@]}; i++ )); do
           if [[ -n ${matches[$i]} ]]; then
@@ -442,7 +448,7 @@ argparse.sh::parse_args() {
       # </Bundled arguments>
     fi
 
-    if [[ $key =~ ^--($long_opt_regex) && -n ${BASH_REMATCH[1]} ]]; then
+    if [[ $key =~ ^--($long_opt_regex) ]]; then
       shift
       matches=("${BASH_REMATCH[@]:2}")
       for (( i=0; i < ${#matches[@]}; i++ )); do
@@ -466,7 +472,7 @@ argparse.sh::parse_args() {
       continue
     fi
 
-    if [[ $key =~ ^-($short_opt_regex) && -n ${BASH_REMATCH[1]} ]]; then
+    if [[ $key =~ ^-($short_opt_regex) ]]; then
       shift
       matches=("${BASH_REMATCH[@]:2}")
       for (( i=0; i < ${#matches[@]}; i++ )); do
@@ -495,7 +501,7 @@ argparse.sh::parse_args() {
       continue
     fi
 
-    if [[ $key =~ ^--($long_arr_regex) && -n ${BASH_REMATCH[1]} ]]; then
+    if [[ $key =~ ^--($long_arr_regex) ]]; then
       shift
       matches=("${BASH_REMATCH[@]:2}")
       for (( i=0; i < ${#matches[@]}; i++ )); do
@@ -525,7 +531,7 @@ argparse.sh::parse_args() {
       continue
     fi
 
-    if [[ $key =~ ^-($short_arr_regex) && -n ${BASH_REMATCH[1]} ]]; then
+    if [[ $key =~ ^-($short_arr_regex) ]]; then
       shift
       matches=("${BASH_REMATCH[@]:2}")
       for (( i=0; i < ${#matches[@]}; i++ )); do
