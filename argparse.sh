@@ -327,7 +327,7 @@ argparse.sh::parse_args() {
         fi
       done
       get_name_upper "$opt_name"
-      printf -v "ARG_$name_upper" 'true'
+      export -n -- "ARG_$name_upper"=true
       continue
     fi
 
@@ -347,7 +347,7 @@ argparse.sh::parse_args() {
       else
         get_name_upper "$opt_name"
       fi
-      printf -v "ARG_$name_upper" 'true'
+      export -n -- "ARG_$name_upper"=true
       additional_opts=${key#-$opt_flag}
       [[ -z $additional_opts ]] && continue
 
@@ -412,11 +412,11 @@ argparse.sh::parse_args() {
 
           if [[ -z ${!found_name} ]]; then
             unset "ARG_$name_upper"
-            printf -v "$found_name" 'true'
+            export -n -- "$found_name"=true
           fi
           eval "ARG_$name_upper+=('$value')"
         else
-          printf -v "ARG_$name_upper" -- "%b" "$value"
+          export -n -- "ARG_$name_upper"="$value"
         fi
       fi
 
@@ -431,7 +431,7 @@ argparse.sh::parse_args() {
             else
               get_name_upper "$opt_name"
             fi
-            printf -v "ARG_$name_upper" 'true'
+            export -n -- "ARG_$name_upper"=true
           fi
         done
       fi
@@ -459,7 +459,7 @@ argparse.sh::parse_args() {
       fi
 
       get_name_upper "$opt_name"
-      printf -v "ARG_$name_upper" -- "%b" "$value"
+      export -n -- "ARG_$name_upper"="$value"
       continue
     fi
 
@@ -488,7 +488,7 @@ argparse.sh::parse_args() {
       else
         get_name_upper "$opt_name"
       fi
-      printf -v "ARG_$name_upper" -- "%b" "$value"
+      export -n -- "ARG_$name_upper"="$value"
       continue
     fi
 
@@ -516,7 +516,7 @@ argparse.sh::parse_args() {
 
       if [[ -z ${!found_name} ]]; then
         unset "ARG_$name_upper"
-        printf -v "$found_name" 'true'
+        export -n -- "$found_name"=true
       fi
       eval "ARG_$name_upper+=('$value')"
       continue
@@ -552,7 +552,7 @@ argparse.sh::parse_args() {
 
       if [[ -z ${!found_name} ]]; then
         unset "ARG_$name_upper"
-        printf -v "$found_name" 'true'
+        export -n -- "$found_name"=true
       fi
       eval "ARG_$name_upper+=('$value')"
       continue
@@ -568,7 +568,7 @@ argparse.sh::parse_args() {
     pos_val=${POSITIONAL[$i]}
     pos_name=${POSITIONAL_NAMES[$i]}
     get_name_upper "$pos_name"
-    printf -v "ARG_$name_upper" -- "%b" "$pos_val"
+    export -n -- "ARG_$name_upper"="$pos_val"
   done
 
   if [[ -n $ARG_HELP ]]; then
