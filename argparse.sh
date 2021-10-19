@@ -268,7 +268,7 @@ argparse.sh::parse_args() {
   long_flag_regex=""
   for (( i=0; i < ${#BOOLEAN_NAMES[@]}; i++ )); do
     opt_flag="${BOOLEAN_NAMES[$i]}"
-    : ${opt_flag:='^$'}
+    : ${opt_flag:='$.^'}
     long_flag_regex="$long_flag_regex($opt_flag)|"
   done
   long_flag_regex="${long_flag_regex%|}"
@@ -276,7 +276,7 @@ argparse.sh::parse_args() {
   short_flag_regex=""
   for (( i=0; i < ${#BOOLEAN_FLAGS[@]}; i++ )); do
     opt_flag="${BOOLEAN_FLAGS[$i]}"
-    : ${opt_flag:='^$'}
+    : ${opt_flag:='$.^'}
     short_flag_regex="$short_flag_regex($opt_flag)|"
   done
   short_flag_regex="${short_flag_regex%|}"
@@ -284,7 +284,7 @@ argparse.sh::parse_args() {
   long_opt_regex=""
   for (( i=0; i < ${#OPTIONAL_NAMES[@]}; i++ )); do
     opt_flag="${OPTIONAL_NAMES[$i]}"
-    : ${opt_flag:='^$'}
+    : ${opt_flag:='$.^'}
     long_opt_regex="$long_opt_regex($opt_flag)|"
   done
   long_opt_regex="${long_opt_regex%|}"
@@ -292,7 +292,7 @@ argparse.sh::parse_args() {
   short_opt_regex=""
   for (( i=0; i < ${#OPTIONAL_FLAGS[@]}; i++ )); do
     opt_flag="${OPTIONAL_FLAGS[$i]}"
-    : ${opt_flag:='^$'}
+    : ${opt_flag:='$.^'}
     short_opt_regex="$short_opt_regex($opt_flag)|"
   done
   short_opt_regex="${short_opt_regex%|}"
@@ -300,7 +300,7 @@ argparse.sh::parse_args() {
   long_arr_regex=""
   for (( i=0; i < ${#ARRAY_NAMES[@]}; i++ )); do
     opt_flag="${ARRAY_NAMES[$i]}"
-    : ${opt_flag:='^$'}
+    : ${opt_flag:='$.^'}
     long_arr_regex="$long_arr_regex($opt_flag)|"
   done
   long_arr_regex="${long_arr_regex%|}"
@@ -308,7 +308,7 @@ argparse.sh::parse_args() {
   short_arr_regex=""
   for (( i=0; i < ${#ARRAY_FLAGS[@]}; i++ )); do
     opt_flag="${ARRAY_FLAGS[$i]}"
-    : ${opt_flag:='^$'}
+    : ${opt_flag:='$.^'}
     short_arr_regex="$short_arr_regex($opt_flag)|"
   done
   short_arr_regex="${short_arr_regex%|}"
