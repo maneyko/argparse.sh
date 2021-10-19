@@ -210,7 +210,7 @@ arg_array() {
 # @param arg_description
 arg_help() {
   if [[ "$@" =~ $arg_help_pat ]]; then
-    HELP_DESCRIPTION="${BASH_REMATCH[2]}"
+    HELP_DESCRIPTION=${BASH_REMATCH[2]}
   fi
   BOOLEAN_NAMES+=('help')
   BOOLEAN_FLAGS+=('h')
@@ -218,41 +218,41 @@ arg_help() {
 }
 
 get_name_upper() {
-  local res="${1//-/_}"
-  res="${res//a/A}"
-  res="${res//b/B}"
-  res="${res//c/C}"
-  res="${res//d/D}"
-  res="${res//e/E}"
-  res="${res//f/F}"
-  res="${res//g/G}"
-  res="${res//h/H}"
-  res="${res//i/I}"
-  res="${res//j/J}"
-  res="${res//k/K}"
-  res="${res//l/L}"
-  res="${res//m/M}"
-  res="${res//n/N}"
-  res="${res//o/O}"
-  res="${res//p/P}"
-  res="${res//q/Q}"
-  res="${res//r/R}"
-  res="${res//s/S}"
-  res="${res//t/T}"
-  res="${res//u/U}"
-  res="${res//v/V}"
-  res="${res//w/W}"
-  res="${res//x/X}"
-  res="${res//y/Y}"
-  name_upper="${res//z/Z}"
+  local res=${1//-/_}
+  res=${res//a/A}
+  res=${res//b/B}
+  res=${res//c/C}
+  res=${res//d/D}
+  res=${res//e/E}
+  res=${res//f/F}
+  res=${res//g/G}
+  res=${res//h/H}
+  res=${res//i/I}
+  res=${res//j/J}
+  res=${res//k/K}
+  res=${res//l/L}
+  res=${res//m/M}
+  res=${res//n/N}
+  res=${res//o/O}
+  res=${res//p/P}
+  res=${res//q/Q}
+  res=${res//r/R}
+  res=${res//s/S}
+  res=${res//t/T}
+  res=${res//u/U}
+  res=${res//v/V}
+  res=${res//w/W}
+  res=${res//x/X}
+  res=${res//y/Y}
+  name_upper=${res//z/Z}
 }
 
 # Set $__DIR__ variable.
 # The full path of the directory of the script.
 get__dir__() {
-  local _origin_pwd="$PWD"
+  local _origin_pwd=$PWD
   cd "${0%/*}"
-  __DIR__="$PWD"
+  __DIR__=$PWD
   cd "$_origin_pwd"
 }
 
@@ -265,53 +265,55 @@ parse_args() {
 # @param args_arr
 argparse.sh::parse_args() {
 
-  long_flag_regex=""
+  impossible_regex='$.^'
+
+  long_flag_regex=
   for (( i=0; i < ${#BOOLEAN_NAMES[@]}; i++ )); do
-    opt_flag="${BOOLEAN_NAMES[$i]}"
-    : ${opt_flag:='$.^'}
+    opt_flag=${BOOLEAN_NAMES[$i]}
+    : ${opt_flag:=$impossible_regex}
     long_flag_regex="$long_flag_regex($opt_flag)|"
   done
-  long_flag_regex="${long_flag_regex%|}"
+  long_flag_regex=${long_flag_regex%|}
 
-  short_flag_regex=""
+  short_flag_regex=
   for (( i=0; i < ${#BOOLEAN_FLAGS[@]}; i++ )); do
-    opt_flag="${BOOLEAN_FLAGS[$i]}"
-    : ${opt_flag:='$.^'}
+    opt_flag=${BOOLEAN_FLAGS[$i]}
+    : ${opt_flag:=$impossible_regex}
     short_flag_regex="$short_flag_regex($opt_flag)|"
   done
-  short_flag_regex="${short_flag_regex%|}"
+  short_flag_regex=${short_flag_regex%|}
 
-  long_opt_regex=""
+  long_opt_regex=
   for (( i=0; i < ${#OPTIONAL_NAMES[@]}; i++ )); do
-    opt_flag="${OPTIONAL_NAMES[$i]}"
-    : ${opt_flag:='$.^'}
+    opt_flag=${OPTIONAL_NAMES[$i]}
+    : ${opt_flag:=$impossible_regex}
     long_opt_regex="$long_opt_regex($opt_flag)|"
   done
-  long_opt_regex="${long_opt_regex%|}"
+  long_opt_regex=${long_opt_regex%|}
 
-  short_opt_regex=""
+  short_opt_regex=
   for (( i=0; i < ${#OPTIONAL_FLAGS[@]}; i++ )); do
-    opt_flag="${OPTIONAL_FLAGS[$i]}"
-    : ${opt_flag:='$.^'}
+    opt_flag=${OPTIONAL_FLAGS[$i]}
+    : ${opt_flag:=$impossible_regex}
     short_opt_regex="$short_opt_regex($opt_flag)|"
   done
-  short_opt_regex="${short_opt_regex%|}"
+  short_opt_regex=${short_opt_regex%|}
 
-  long_arr_regex=""
+  long_arr_regex=
   for (( i=0; i < ${#ARRAY_NAMES[@]}; i++ )); do
-    opt_flag="${ARRAY_NAMES[$i]}"
-    : ${opt_flag:='$.^'}
+    opt_flag=${ARRAY_NAMES[$i]}
+    : ${opt_flag:=$impossible_regex}
     long_arr_regex="$long_arr_regex($opt_flag)|"
   done
-  long_arr_regex="${long_arr_regex%|}"
+  long_arr_regex=${long_arr_regex%|}
 
-  short_arr_regex=""
+  short_arr_regex=
   for (( i=0; i < ${#ARRAY_FLAGS[@]}; i++ )); do
-    opt_flag="${ARRAY_FLAGS[$i]}"
-    : ${opt_flag:='$.^'}
+    opt_flag=${ARRAY_FLAGS[$i]}
+    : ${opt_flag:=$impossible_regex}
     short_arr_regex="$short_arr_regex($opt_flag)|"
   done
-  short_arr_regex="${short_arr_regex%|}"
+  short_arr_regex=${short_arr_regex%|}
 
   while [[ $# -gt 0 ]]; do
     key=$1
@@ -327,7 +329,7 @@ argparse.sh::parse_args() {
         fi
       done
       get_name_upper "$opt_name"
-      export -n -- "ARG_$name_upper"=true
+      export -n ARG_$name_upper=true
       continue
     fi
 
@@ -347,11 +349,11 @@ argparse.sh::parse_args() {
       else
         get_name_upper "$opt_name"
       fi
-      export -n -- "ARG_$name_upper"=true
+      export -n ARG_$name_upper=true
       additional_opts=${key#-$opt_flag}
       [[ -z $additional_opts ]] && continue
 
-      # Bundled arguments
+      # <Bundled arguments>
 
       longest_match_o_n=-1
       longest_match_a_n=-1
@@ -402,21 +404,21 @@ argparse.sh::parse_args() {
           get_name_upper $bundled_flag
         fi
         if [[ -z $value ]]; then
-          value="$1"
+          value=$1
           shift
         fi
-        additional_opts="${additional_opts%%$bundled_flag*}"
+        additional_opts=${additional_opts%%$bundled_flag*}
 
         if [[ $longest_match_a_n -gt $longest_match_o_n ]]; then
-          found_name="_found_$name_upper"
+          found_name=_found_$name_upper
 
           if [[ -z ${!found_name} ]]; then
-            unset "ARG_$name_upper"
-            export -n -- "$found_name"=true
+            unset ARG_$name_upper
+            export -n "$found_name"=true
           fi
           eval "ARG_$name_upper+=('$value')"
         else
-          export -n -- "ARG_$name_upper"="$value"
+          export -n -- ARG_$name_upper="$value"
         fi
       fi
 
@@ -431,13 +433,14 @@ argparse.sh::parse_args() {
             else
               get_name_upper "$opt_name"
             fi
-            export -n -- "ARG_$name_upper"=true
+            export -n ARG_$name_upper=true
           fi
         done
       fi
       continue
-    fi
 
+      # </Bundled arguments>
+    fi
 
     if [[ $key =~ ^--($long_opt_regex) && -n ${BASH_REMATCH[1]} ]]; then
       shift
@@ -452,14 +455,14 @@ argparse.sh::parse_args() {
       if [[ $key =~ ^--$opt_name=(.*) ]]; then
         value=${BASH_REMATCH[1]}
       elif [[ $key =~ ^--${opt_name}$ ]]; then
-        value="$1"
+        value=$1
         shift
       else
         continue
       fi
 
       get_name_upper "$opt_name"
-      export -n -- "ARG_$name_upper"="$value"
+      export -n -- ARG_$name_upper="$value"
       continue
     fi
 
@@ -475,9 +478,9 @@ argparse.sh::parse_args() {
       done
 
       if [[ $key =~ ^-$opt_flag(.+) ]]; then
-        value="${BASH_REMATCH[1]}"
+        value=${BASH_REMATCH[1]}
       elif [[ $key =~ ^-${opt_flag}$ ]]; then
-        value="$1"
+        value=$1
         shift
       else
         continue
@@ -488,7 +491,7 @@ argparse.sh::parse_args() {
       else
         get_name_upper "$opt_name"
       fi
-      export -n -- "ARG_$name_upper"="$value"
+      export -n -- ARG_$name_upper="$value"
       continue
     fi
 
@@ -505,18 +508,18 @@ argparse.sh::parse_args() {
       if [[ $key =~ ^--$opt_name=(.*) ]]; then
         value=${BASH_REMATCH[1]}
       elif [[ $key =~ ^--${opt_name}$ ]]; then
-        value="$1"
+        value=$1
         shift
       else
         continue
       fi
       get_name_upper "$opt_name"
 
-      found_name="_found_$name_upper"
+      found_name=_found_$name_upper
 
       if [[ -z ${!found_name} ]]; then
-        unset "ARG_$name_upper"
-        export -n -- "$found_name"=true
+        unset ARG_$name_upper
+        export -n $found_name=true
       fi
       eval "ARG_$name_upper+=('$value')"
       continue
@@ -534,9 +537,9 @@ argparse.sh::parse_args() {
       done
 
       if [[ $key =~ ^-$opt_flag(.+) ]]; then
-        value="${BASH_REMATCH[1]}"
+        value=${BASH_REMATCH[1]}
       elif [[ $key =~ ^-${opt_flag}$ ]]; then
-        value="$1"
+        value=$1
         shift
       else
         continue
@@ -548,11 +551,11 @@ argparse.sh::parse_args() {
         get_name_upper "$opt_name"
       fi
 
-      found_name="_found_$name_upper"
+      found_name=_found_$name_upper
 
       if [[ -z ${!found_name} ]]; then
-        unset "ARG_$name_upper"
-        export -n -- "$found_name"=true
+        unset ARG_$name_upper
+        export -n $found_name=true
       fi
       eval "ARG_$name_upper+=('$value')"
       continue
@@ -568,7 +571,7 @@ argparse.sh::parse_args() {
     pos_val=${POSITIONAL[$i]}
     pos_name=${POSITIONAL_NAMES[$i]}
     get_name_upper "$pos_name"
-    export -n -- "ARG_$name_upper"="$pos_val"
+    export -n -- ARG_$name_upper="$pos_val"
   done
 
   if [[ -n $ARG_HELP ]]; then
