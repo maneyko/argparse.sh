@@ -332,11 +332,7 @@ argparse.sh::parse_args() {
         fi
       done
 
-      if [[ -z $opt_name ]]; then
-        name_upper_arg=$opt_flag
-      else
-        name_upper_arg=$opt_name
-      fi
+      name_upper_arg=${opt_name:-$opt_flag}
       get_name_upper
       export -n ARG_$name_upper=true
       additional_opts=${key#-$opt_flag}
@@ -387,11 +383,7 @@ argparse.sh::parse_args() {
           bundled_name=$opt_name_a
           value=$longest_match_a
         fi
-        if [[ -n $bundled_name ]]; then
-          name_upper_arg=$bundled_name
-        else
-          name_upper_arg=$bundled_flag
-        fi
+        name_upper_arg=${bundled_name:-$bundled_flag}
         get_name_upper
         if [[ -z $value ]]; then
           value=$1
@@ -418,11 +410,7 @@ argparse.sh::parse_args() {
             j=$(($i-2))
             opt_name=${BOOLEAN_NAMES[$j]}
             opt_flag=${BOOLEAN_FLAGS[$j]}
-            if [[ -z $opt_name ]]; then
-              name_upper_arg=$opt_flag
-            else
-              name_upper_arg=$opt_name
-            fi
+            name_upper_arg=${opt_name:-$opt_flag}
             get_name_upper
             export -n ARG_$name_upper=true
           fi
@@ -472,11 +460,7 @@ argparse.sh::parse_args() {
         continue
       fi
 
-      if [[ -z $opt_name ]]; then
-        name_upper_arg=$opt_flag
-      else
-        name_upper_arg=$opt_name
-      fi
+      name_upper_arg=${opt_name:-$opt_flag}
       get_name_upper
       export -n ARG_$name_upper="$value"
 
@@ -528,11 +512,7 @@ argparse.sh::parse_args() {
         continue
       fi
 
-      if [[ -z $opt_name ]]; then
-        name_upper_arg=$opt_flag
-      else
-        name_upper_arg=$opt_name
-      fi
+      name_upper_arg=${opt_name:-$opt_flag}
       get_name_upper
 
       found_name=_found_$name_upper
