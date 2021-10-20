@@ -319,10 +319,8 @@ argparse.sh::parse_args() {
       done
       get_name_upper "$opt_name"
       export -n ARG_$name_upper=true
-      continue
-    fi
 
-    if [[ $key =~ ^-($short_flag_regex) ]]; then
+    elif [[ $key =~ ^-($short_flag_regex) ]]; then
       shift
       for (( i=2; i < ${#BASH_REMATCH[@]}; i++ )); do
         if [[ -n ${BASH_REMATCH[$i]} ]]; then
@@ -426,12 +424,9 @@ argparse.sh::parse_args() {
           fi
         done
       fi
-      continue
-
       # </Bundled arguments>
-    fi
 
-    if [[ $key =~ ^--($long_opt_regex) ]]; then
+    elif [[ $key =~ ^--($long_opt_regex) ]]; then
       shift
       for (( i=2; i < ${#BASH_REMATCH[@]}; i++ )); do
         if [[ -n ${BASH_REMATCH[$i]} ]]; then
@@ -451,10 +446,8 @@ argparse.sh::parse_args() {
 
       get_name_upper "$opt_name"
       export -n -- ARG_$name_upper="$value"
-      continue
-    fi
 
-    if [[ $key =~ ^-($short_opt_regex) ]]; then
+    elif [[ $key =~ ^-($short_opt_regex) ]]; then
       shift
       for (( i=2; i < ${#BASH_REMATCH[@]}; i++ )); do
         if [[ -n ${BASH_REMATCH[$i]} ]]; then
@@ -480,10 +473,8 @@ argparse.sh::parse_args() {
         get_name_upper "$opt_name"
       fi
       export -n -- ARG_$name_upper="$value"
-      continue
-    fi
 
-    if [[ $key =~ ^--($long_arr_regex) ]]; then
+    elif [[ $key =~ ^--($long_arr_regex) ]]; then
       shift
       for (( i=2; i < ${#BASH_REMATCH[@]}; i++ )); do
         if [[ -n ${BASH_REMATCH[$i]} ]]; then
@@ -509,10 +500,8 @@ argparse.sh::parse_args() {
         export -n $found_name=true
       fi
       eval "ARG_$name_upper+=('$value')"
-      continue
-    fi
 
-    if [[ $key =~ ^-($short_arr_regex) ]]; then
+    elif [[ $key =~ ^-($short_arr_regex) ]]; then
       shift
       for (( i=2; i < ${#BASH_REMATCH[@]}; i++ )); do
         if [[ -n ${BASH_REMATCH[$i]} ]]; then
@@ -545,11 +534,11 @@ argparse.sh::parse_args() {
         export -n $found_name=true
       fi
       eval "ARG_$name_upper+=('$value')"
-      continue
-    fi
 
-    POSITIONAL+=("$key")
-    shift
+    else
+      shift
+      POSITIONAL+=("$key")
+    fi
   done
 
   set -- "${POSITIONAL[@]}"
