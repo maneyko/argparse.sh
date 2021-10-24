@@ -24,6 +24,7 @@ execute_command() {
     --delimiter '/\s+/' \
     --percentage=75%
 }
+# ./advanced-usage-example.sh -p2020 -cfr'/^\d+(\S+)\s+[[:alnum:]]/' --host google.com --outputs=3 --host amazon.com -qve 'print "hello world: $1" if /^\s+(.).*$/' --delimiter '/\s+/' --percentage=75
 
 echo "Speed test for processing several flags (N = $N) ..."
 time for (( i=0; i < $N; i++ )); do
