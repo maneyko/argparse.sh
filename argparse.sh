@@ -191,8 +191,8 @@ arg_boolean() {
     BOOLEAN_FLAGS+=("$opt_flag")
     BOOLEAN_DESCRIPTIONS+=("${BASH_REMATCH[6]}")
 
-    long_flag_regex="$long_flag_regex(${opt_name:-$impossible_match_pat})|"
-    short_flag_regex="$short_flag_regex(${opt_flag:-$impossible_match_pat})|"
+    long_flag_regex+="(${opt_name:-$impossible_match_pat})|"
+    short_flag_regex+="(${opt_flag:-$impossible_match_pat})|"
   fi
 }
 
@@ -209,8 +209,8 @@ arg_optional() {
     OPTIONAL_FLAGS+=("$opt_flag")
     OPTIONAL_DESCRIPTIONS+=("${BASH_REMATCH[6]}")
 
-    long_opt_regex="$long_opt_regex(${opt_name:-$impossible_match_pat})|"
-    short_opt_regex="$short_opt_regex(${opt_flag:-$impossible_match_pat})|"
+    long_opt_regex+="(${opt_name:-$impossible_match_pat})|"
+    short_opt_regex+="(${opt_flag:-$impossible_match_pat})|"
   fi
 }
 
@@ -227,8 +227,8 @@ arg_array() {
     ARRAY_FLAGS+=("$opt_flag")
     ARRAY_DESCRIPTIONS+=("${BASH_REMATCH[6]}")
 
-    long_arr_regex="$long_arr_regex(${opt_name:-$impossible_match_pat})|"
-    short_arr_regex="$short_arr_regex(${opt_flag:-$impossible_match_pat})|"
+    long_arr_regex+="(${opt_name:-$impossible_match_pat})|"
+    short_arr_regex+="(${opt_flag:-$impossible_match_pat})|"
   fi
 }
 
@@ -241,8 +241,8 @@ arg_help() {
   BOOLEAN_FLAGS+=('h')
   BOOLEAN_DESCRIPTIONS+=('Print this help message.')
 
-  long_flag_regex="$long_flag_regex(help)|"
-  short_flag_regex="$short_flag_regex(h)|"
+  long_flag_regex+="(help)|"
+  short_flag_regex+="(h)|"
 }
 
 get_name_upper() {
