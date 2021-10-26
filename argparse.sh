@@ -398,7 +398,7 @@ argparse.sh::parse_args() {
             unset ARG_$name_upper
             export -n $found_name=true
           fi
-          eval "ARG_$name_upper+=('$value')"
+          eval "ARG_$name_upper+=(\"\$value\")"
         else
           export -n ARG_$name_upper="$value"
         fi
@@ -490,7 +490,7 @@ argparse.sh::parse_args() {
         unset ARG_$name_upper
         export -n $found_name=true
       fi
-      eval "ARG_$name_upper+=('$value')"
+      eval "ARG_$name_upper+=(\"\$value\")"
 
     elif [[ $key =~ ^-($short_arr_regex) ]]; then
       shift
@@ -521,7 +521,7 @@ argparse.sh::parse_args() {
         unset ARG_$name_upper
         export -n $found_name=true
       fi
-      eval "ARG_$name_upper+=('$value')"
+      eval "ARG_$name_upper+=(\"\$value\")"
 
     else
       shift
