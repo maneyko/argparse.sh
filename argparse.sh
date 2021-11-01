@@ -339,7 +339,7 @@ argparse.sh::parse_args() {
       match_a_n=-1
 
       if [[ $bundled_args =~ ($short_opt_regex)(.*) ]]; then
-        match_o=${BASH_REMATCH[$((${#OPTIONAL_FLAGS[@]} + 2))]}
+        match_o=${BASH_REMATCH[@]: -1}
         match_o_n=${#match_o}
         opt_flag_o=${BASH_REMATCH[1]}
         name_var=_ARG_${opt_flag_o}_NAME
@@ -347,7 +347,7 @@ argparse.sh::parse_args() {
       fi
 
       if [[ $bundled_args =~ ($short_arr_regex)(.*) ]]; then
-        match_a=${BASH_REMATCH[$((${#ARRAY_FLAGS[@]} + 2))]}
+        match_a=${BASH_REMATCH[@]: -1}
         match_a_n=${#match_a}
         opt_flag_a=${BASH_REMATCH[1]}
         name_var=_ARG_${opt_flag_o}_NAME
