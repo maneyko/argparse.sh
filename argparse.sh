@@ -120,14 +120,14 @@
 #   - Function to print the help page, automatically done if `-h' flag is present
 
 
-if [[ $0 == *argparse.sh ]]; then
-  echo 'ERROR: You may not execute argparse.sh directly.' >&2
+if [[ ${BASH_VERSINFO[0]} -le 2 ]]; then
+  echo 'ERROR: argparse.sh is not supported for Bash 2.x or lower.' >&2
   exit 1
 fi
 
-if [[ ${BASH_VERSINFO[0]} -le 2 ]]; then
-  echo 'WARN: argparse.sh is not supported for Bash 2.x or lower.' >&2
-  return
+if [[ ${BASH_SOURCE[0]} == $0 ]]; then
+  echo 'ERROR: You may not execute argparse.sh directly.' >&2
+  exit 1
 fi
 
 ARGS_ARR=("$@")
@@ -187,11 +187,11 @@ arg_boolean() {
   if [[ "$@" =~ $three_arg_pat ]]; then
     opt_name=${BASH_REMATCH[1]}
     opt_flag=${BASH_REMATCH[3]}
-    export -n _ARG_${opt_flag:-${opt_name//-/_}}_NAME=$opt_name
     BOOLEAN_NAMES[${#BOOLEAN_NAMES[@]}]=$opt_name
     BOOLEAN_FLAGS[${#BOOLEAN_FLAGS[@]}]=$opt_flag
     BOOLEAN_DESCRIPTIONS[${#BOOLEAN_DESCRIPTIONS[@]}]=${BASH_REMATCH[6]}
 
+    export -n _ARG_${opt_flag:-${opt_name//-/_}}_NAME=$opt_name
     long_flag_regex+="(${opt_name:-$impossible_match_pat})|"
     short_flag_regex+="(${opt_flag:-$impossible_match_pat})|"
   fi
@@ -206,11 +206,11 @@ arg_optional() {
   if [[ "$@" =~ $three_arg_pat ]]; then
     opt_name=${BASH_REMATCH[1]}
     opt_flag=${BASH_REMATCH[3]}
-    export -n _ARG_${opt_flag:-${opt_name//-/_}}_NAME=$opt_name
     OPTIONAL_NAMES[${#OPTIONAL_NAMES[@]}]=$opt_name
     OPTIONAL_FLAGS[${#OPTIONAL_FLAGS[@]}]=$opt_flag
     OPTIONAL_DESCRIPTIONS[${#OPTIONAL_DESCRIPTIONS[@]}]=${BASH_REMATCH[6]}
 
+    export -n _ARG_${opt_flag:-${opt_name//-/_}}_NAME=$opt_name
     long_opt_regex+="(${opt_name:-$impossible_match_pat})|"
     short_opt_regex+="(${opt_flag:-$impossible_match_pat})|"
   fi
@@ -225,11 +225,11 @@ arg_array() {
   if [[ "$@" =~ $three_arg_pat ]]; then
     opt_name=${BASH_REMATCH[1]}
     opt_flag=${BASH_REMATCH[3]}
-    export -n _ARG_${opt_flag:-${opt_name//-/_}}_NAME=$opt_name
     ARRAY_NAMES[${#ARRAY_NAMES[@]}]=$opt_name
     ARRAY_FLAGS[${#ARRAY_FLAGS[@]}]=$opt_flag
     ARRAY_DESCRIPTIONS[${#ARRAY_DESCRIPTIONS[@]}]=${BASH_REMATCH[6]}
 
+    export -n _ARG_${opt_flag:-${opt_name//-/_}}_NAME=$opt_name
     long_arr_regex+="(${opt_name:-$impossible_match_pat})|"
     short_arr_regex+="(${opt_flag:-$impossible_match_pat})|"
   fi
@@ -243,8 +243,8 @@ arg_help() {
   BOOLEAN_NAMES[${#BOOLEAN_NAMES[@]}]=help
   BOOLEAN_FLAGS[${#BOOLEAN_FLAGS[@]}]=h
   BOOLEAN_DESCRIPTIONS[${#BOOLEAN_DESCRIPTIONS[@]}]='Print this help message.'
-  export -n _ARG_h_NAME=help
 
+  export -n _ARG_h_NAME=help
   long_flag_regex+="(help)|"
   short_flag_regex+="(h)|"
 }
@@ -308,7 +308,7 @@ argparse.sh::parse_args() {
   short_arr_regex=${short_arr_regex%|}
   : ${short_arr_regex:=($impossible_match_pat)}
 
-  local match opt_name opt_flag value
+  local match opt_name opt_flag name_var value
 
   while [[ $# -gt 0 ]]; do
     key=$1
