@@ -337,15 +337,15 @@ argparse.sh::parse_args() {
       name_upper_arg=${opt_name:-$opt_flag}
       get_name_upper
       export -n ARG_$name_upper=true
-      bundled_opts=${key#-$opt_flag}
-      [[ -z $bundled_opts ]] && continue
+      bundled_args=${key#-$opt_flag}
+      [[ -z $bundled_args ]] && continue
 
       # <Bundled arguments>
 
       match_o_n=-1
       match_a_n=-1
 
-      if [[ $bundled_opts =~ ($short_opt_regex)(.*) ]]; then
+      if [[ $bundled_args =~ ($short_opt_regex)(.*) ]]; then
         match_o=${BASH_REMATCH[$((${#OPTIONAL_FLAGS[@]} + 2))]}
         match_o_n=${#match_o}
 
@@ -360,7 +360,7 @@ argparse.sh::parse_args() {
         done
       fi
 
-      if [[ $bundled_opts =~ ($short_arr_regex)(.*) ]]; then
+      if [[ $bundled_args =~ ($short_arr_regex)(.*) ]]; then
         match_a=${BASH_REMATCH[$((${#ARRAY_FLAGS[@]} + 2))]}
         match_a_n=${#match_a}
 
@@ -391,7 +391,7 @@ argparse.sh::parse_args() {
           value=$1
           shift
         fi
-        bundled_opts=${bundled_opts%%$bundled_flag*}
+        bundled_args=${bundled_args%%$bundled_flag*}
 
         if [[ $match_a_n -gt $match_o_n ]]; then
           found_name=_found_$name_upper
@@ -406,7 +406,7 @@ argparse.sh::parse_args() {
         fi
       fi
 
-      if [[ $bundled_opts =~ ($short_flag_regex) ]]; then
+      if [[ $bundled_args =~ ($short_flag_regex) ]]; then
         i=2; for match in "${BASH_REMATCH[@]:2}"; do
           if [[ -n $match ]]; then
             j=$(($i-2))
@@ -586,9 +586,9 @@ print_help() {
     : $((i++))
   done
   if [[
-    ${#BOOLEAN_FLAGS[@]}  -gt 0 || ${#BOOLEAN_NAMES[@]}  -gt 0 ||
-    ${#OPTIONAL_FLAGS[@]} -gt 0 || ${#OPTIONAL_NAMES[@]} -gt 0 ||
-    ${#ARRAY_FLAGS[@]}    -gt 0 || ${#ARRAY_NAMES[@]}    -gt 0
+    ${#BOOLEAN_FLAGS[@]}  -gt 0 ||
+    ${#OPTIONAL_FLAGS[@]} -gt 0 ||
+    ${#ARRAY_FLAGS[@]}    -gt 0
   ]]; then
     has_any_optional_flags=true
   else
@@ -639,7 +639,7 @@ print_help() {
       else
         printf -v var -- "  %-${X_OPT_NL}s %b\n" ' ' "$REPLY"
       fi
-      printf_s+="$var"
+      printf_s+=$var
     done < <(echo "${BOOLEAN_DESCRIPTIONS[$i]}")
     : $((i++))
   done
@@ -648,7 +648,7 @@ print_help() {
 
     if [[ -n $opt_flag ]]; then
       cprint_q 3 "-$opt_flag"
-      flag_disp="$cprint_string"
+      flag_disp=$cprint_string
     else
       cprint_q 3 "  "
       flag_disp="$cprint_string "
@@ -669,7 +669,7 @@ print_help() {
       else
         printf -v var -- "  %-${X_OPT_NL}s %b\n" ' ' "$REPLY"
       fi
-      printf_s+="$var"
+      printf_s+=$var
     done < <(echo "${OPTIONAL_DESCRIPTIONS[$i]}")
     : $((i++))
   done
@@ -677,7 +677,7 @@ print_help() {
     opt_flag=${ARRAY_FLAGS[$i]}
     if [[ -n $opt_flag ]]; then
       cprint_q 3 "-$opt_flag"
-      flag_disp="$cprint_string"
+      flag_disp=$cprint_string
     else
       cprint_q 3 "  "
       flag_disp="$cprint_string "
@@ -688,7 +688,7 @@ print_help() {
       cprint_q 3 "  "
     fi
     if [[ -n $opt_flag && -n $opt_name ]]; then
-      flag_disp="$flag_disp,"
+      flag_disp=$flag_disp,
     fi
     j=
     while read -r; do
@@ -698,7 +698,7 @@ print_help() {
       else
         printf -v var -- "  %-${X_OPT_NL}s %b\n" ' ' "$REPLY"
       fi
-      printf_s+="$var"
+      printf_s+=$var
     done < <(echo "${ARRAY_DESCRIPTIONS[$i]}")
     : $((i++))
   done
