@@ -120,7 +120,7 @@
 #   - Function to print the help page, automatically done if `-h' flag is present
 
 
-if [[ ${BASH_SOURCE[0]} == $0 ]]; then
+if [[ $0 == *argparse.sh ]]; then
   echo 'ERROR: You may not execute argparse.sh directly.' >&2
   exit 1
 fi
@@ -337,18 +337,17 @@ argparse.sh::parse_args() {
       name_upper_arg=${opt_name:-$opt_flag}
       get_name_upper
       export -n ARG_$name_upper=true
-      additional_opts=${key#-$opt_flag}
-      [[ -z $additional_opts ]] && continue
+      bundled_opts=${key#-$opt_flag}
+      [[ -z $bundled_opts ]] && continue
 
       # <Bundled arguments>
 
-      longest_match_o_n=-1
-      longest_match_a_n=-1
+      match_o_n=-1
+      match_a_n=-1
 
-      if [[ $additional_opts =~ ($short_opt_regex)(.*) ]]; then
-        optional_count=${#OPTIONAL_FLAGS[@]}
-        longest_match_o=${BASH_REMATCH[$(($optional_count + 2))]}
-        longest_match_o_n=${#longest_match_o}
+      if [[ $bundled_opts =~ ($short_opt_regex)(.*) ]]; then
+        match_o=${BASH_REMATCH[$((${#OPTIONAL_FLAGS[@]} + 2))]}
+        match_o_n=${#match_o}
 
         i=2; for match in "${BASH_REMATCH[@]:2}"; do
           if [[ -n $match ]]; then
@@ -361,10 +360,9 @@ argparse.sh::parse_args() {
         done
       fi
 
-      if [[ $additional_opts =~ ($short_arr_regex)(.*) ]]; then
-        array_count=${#ARRAY_FLAGS[@]}
-        longest_match_a=${BASH_REMATCH[$(($array_count + 2))]}
-        longest_match_a_n=${#longest_match_a}
+      if [[ $bundled_opts =~ ($short_arr_regex)(.*) ]]; then
+        match_a=${BASH_REMATCH[$((${#ARRAY_FLAGS[@]} + 2))]}
+        match_a_n=${#match_a}
 
         i=2; for match in "${BASH_REMATCH[@]:2}"; do
           if [[ -n $match ]]; then
@@ -377,15 +375,15 @@ argparse.sh::parse_args() {
         done
       fi
 
-      if [[ $longest_match_o_n -gt -1 || $longest_match_a_n -gt -1 ]]; then
-        if [[ $longest_match_o_n -ge $longest_match_a_n ]]; then
+      if [[ $match_o_n -gt -1 || $match_a_n -gt -1 ]]; then
+        if [[ $match_o_n -ge $match_a_n ]]; then
           bundled_flag=$opt_flag_o
           bundled_name=$opt_name_o
-          value=$longest_match_o
+          value=$match_o
         else
           bundled_flag=$opt_flag_a
           bundled_name=$opt_name_a
-          value=$longest_match_a
+          value=$match_a
         fi
         name_upper_arg=${bundled_name:-$bundled_flag}
         get_name_upper
@@ -393,9 +391,9 @@ argparse.sh::parse_args() {
           value=$1
           shift
         fi
-        additional_opts=${additional_opts%%$bundled_flag*}
+        bundled_opts=${bundled_opts%%$bundled_flag*}
 
-        if [[ $longest_match_a_n -gt $longest_match_o_n ]]; then
+        if [[ $match_a_n -gt $match_o_n ]]; then
           found_name=_found_$name_upper
 
           if [[ -z ${!found_name} ]]; then
@@ -408,7 +406,7 @@ argparse.sh::parse_args() {
         fi
       fi
 
-      if [[ $additional_opts =~ ($short_flag_regex) ]]; then
+      if [[ $bundled_opts =~ ($short_flag_regex) ]]; then
         i=2; for match in "${BASH_REMATCH[@]:2}"; do
           if [[ -n $match ]]; then
             j=$(($i-2))
@@ -533,7 +531,10 @@ argparse.sh::parse_args() {
     fi
   done
 
-  set -- "${POSITIONAL[@]}"
+  if [[ -n $ARG_HELP ]]; then
+    print_help
+    exit 0
+  fi
 
   i=0; for pos_val in "${POSITIONAL[@]}"; do
     name_upper_arg=${POSITIONAL_NAMES[$i]}
@@ -542,10 +543,7 @@ argparse.sh::parse_args() {
     : $((i++))
   done
 
-  if [[ -n $ARG_HELP ]]; then
-    print_help
-    exit 0
-  fi
+  set -- "${POSITIONAL[@]}"
 }
 
 print_help() {
