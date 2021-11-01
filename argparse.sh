@@ -305,6 +305,8 @@ argparse.sh::parse_args() {
   short_arr_regex=${short_arr_regex%|}
   : ${short_arr_regex:=($impossible_match_pat)}
 
+  local match opt_name opt_flag value
+
   while [[ $# -gt 0 ]]; do
     key=$1
     value=
@@ -551,7 +553,7 @@ print_help() {
   local X_POS=$(($HELP_WIDTH + 10))
   local X_OPT=$(($HELP_WIDTH + 23))
   local X_OPT_NL=$(($HELP_WIDTH - 3))
-  local j opt_flag opt_name flag_disp printf_s var
+  local opt_flag opt_name flag_disp printf_s var
   bprint "usage:"
   printf_s="  ${0##*/} "
   for p_name in "${POSITIONAL_NAMES[@]}"; do
