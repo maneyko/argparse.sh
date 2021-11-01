@@ -313,16 +313,15 @@ argparse.sh::parse_args() {
   while [[ $# -gt 0 ]]; do
     key=$1
     value=
+    shift
 
     if [[ $key =~ ^--($long_flag_regex)$ ]]; then
-      shift
       opt_name=${BASH_REMATCH[1]}
       name_upper_arg=$opt_name
       get_name_upper
       export -n ARG_$name_upper=true
 
     elif [[ $key =~ ^-($short_flag_regex) ]]; then
-      shift
       opt_flag=${BASH_REMATCH[1]}
       name_var=_ARG_${opt_flag}_NAME
       opt_name=${!name_var}
@@ -396,7 +395,6 @@ argparse.sh::parse_args() {
       # </Bundled arguments>
 
     elif [[ $key =~ ^--($long_opt_regex) ]]; then
-      shift
       opt_name=${BASH_REMATCH[1]}
       if [[ $key == --$opt_name ]]; then
         value=$1
@@ -412,7 +410,6 @@ argparse.sh::parse_args() {
       export -n ARG_$name_upper="$value"
 
     elif [[ $key =~ ^-($short_opt_regex) ]]; then
-      shift
       opt_flag=${BASH_REMATCH[1]}
       name_var=_ARG_${opt_flag}_NAME
       opt_name=${!name_var}
@@ -428,7 +425,6 @@ argparse.sh::parse_args() {
       export -n ARG_$name_upper="$value"
 
     elif [[ $key =~ ^--($long_arr_regex) ]]; then
-      shift
       opt_name=${BASH_REMATCH[1]}
       if [[ $key == --$opt_name ]]; then
         value=$1
@@ -450,7 +446,6 @@ argparse.sh::parse_args() {
       eval "ARG_$name_upper[\${#ARG_$name_upper[@]}]=\$value"
 
     elif [[ $key =~ ^-($short_arr_regex) ]]; then
-      shift
       opt_flag=${BASH_REMATCH[1]}
       name_var=_ARG_${opt_flag}_NAME
       opt_name=${!name_var}
@@ -472,7 +467,6 @@ argparse.sh::parse_args() {
       fi
       eval "ARG_$name_upper[\${#ARG_$name_upper[@]}]=\$value"
     else
-      shift
       POSITIONAL[${#POSITIONAL[@]}]=$key
     fi
   done
