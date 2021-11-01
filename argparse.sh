@@ -278,10 +278,9 @@ get_name_upper() {
 # Set $__DIR__ variable.
 # The full path of the directory of the script.
 get__dir__() {
-  local _origin_pwd=$PWD
   cd "${0%/*}"
   __DIR__=$PWD
-  cd "$_origin_pwd"
+  cd "$OLDPWD"
 }
 
 parse_args() {
@@ -313,13 +312,7 @@ argparse.sh::parse_args() {
 
     if [[ $key =~ ^--($long_flag_regex)$ ]]; then
       shift
-      i=2; for match in "${BASH_REMATCH[@]:2}"; do
-        if [[ -n $match ]]; then
-          opt_name=${BOOLEAN_NAMES[$(($i-2))]}
-          break
-        fi
-        : $((i++))
-      done
+      opt_name=${BASH_REMATCH[1]}
       name_upper_arg=$opt_name
       get_name_upper
       export -n ARG_$name_upper=true
@@ -425,14 +418,7 @@ argparse.sh::parse_args() {
 
     elif [[ $key =~ ^--($long_opt_regex) ]]; then
       shift
-      i=2; for match in "${BASH_REMATCH[@]:2}"; do
-        if [[ -n $match ]]; then
-          opt_name=${OPTIONAL_NAMES[$(($i-2))]}
-          break
-        fi
-        : $((i++))
-      done
-
+      opt_name=${BASH_REMATCH[1]}
       if [[ $key == --$opt_name ]]; then
         value=$1
         shift
@@ -471,14 +457,7 @@ argparse.sh::parse_args() {
 
     elif [[ $key =~ ^--($long_arr_regex) ]]; then
       shift
-      i=2; for match in "${BASH_REMATCH[@]:2}"; do
-        if [[ -n $match ]]; then
-          opt_name=${ARRAY_NAMES[$(($i-2))]}
-          break
-        fi
-        : $((i++))
-      done
-
+      opt_name=${BASH_REMATCH[1]}
       if [[ $key == --$opt_name ]]; then
         value=$1
         shift
