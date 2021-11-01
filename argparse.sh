@@ -187,6 +187,7 @@ arg_boolean() {
   if [[ "$@" =~ $three_arg_pat ]]; then
     opt_name=${BASH_REMATCH[1]}
     opt_flag=${BASH_REMATCH[3]}
+    export -n _ARG_${opt_flag:-${opt_name//-/_}}_NAME=$opt_name
     BOOLEAN_NAMES[${#BOOLEAN_NAMES[@]}]=$opt_name
     BOOLEAN_FLAGS[${#BOOLEAN_FLAGS[@]}]=$opt_flag
     BOOLEAN_DESCRIPTIONS[${#BOOLEAN_DESCRIPTIONS[@]}]=${BASH_REMATCH[6]}
@@ -205,6 +206,7 @@ arg_optional() {
   if [[ "$@" =~ $three_arg_pat ]]; then
     opt_name=${BASH_REMATCH[1]}
     opt_flag=${BASH_REMATCH[3]}
+    export -n _ARG_${opt_flag:-${opt_name//-/_}}_NAME=$opt_name
     OPTIONAL_NAMES[${#OPTIONAL_NAMES[@]}]=$opt_name
     OPTIONAL_FLAGS[${#OPTIONAL_FLAGS[@]}]=$opt_flag
     OPTIONAL_DESCRIPTIONS[${#OPTIONAL_DESCRIPTIONS[@]}]=${BASH_REMATCH[6]}
@@ -223,6 +225,7 @@ arg_array() {
   if [[ "$@" =~ $three_arg_pat ]]; then
     opt_name=${BASH_REMATCH[1]}
     opt_flag=${BASH_REMATCH[3]}
+    export -n _ARG_${opt_flag:-${opt_name//-/_}}_NAME=$opt_name
     ARRAY_NAMES[${#ARRAY_NAMES[@]}]=$opt_name
     ARRAY_FLAGS[${#ARRAY_FLAGS[@]}]=$opt_flag
     ARRAY_DESCRIPTIONS[${#ARRAY_DESCRIPTIONS[@]}]=${BASH_REMATCH[6]}
@@ -240,6 +243,7 @@ arg_help() {
   BOOLEAN_NAMES[${#BOOLEAN_NAMES[@]}]=help
   BOOLEAN_FLAGS[${#BOOLEAN_FLAGS[@]}]=h
   BOOLEAN_DESCRIPTIONS[${#BOOLEAN_DESCRIPTIONS[@]}]='Print this help message.'
+  export -n _ARG_h_NAME=help
 
   long_flag_regex+="(help)|"
   short_flag_regex+="(h)|"
@@ -319,15 +323,9 @@ argparse.sh::parse_args() {
 
     elif [[ $key =~ ^-($short_flag_regex) ]]; then
       shift
-      i=2; for match in "${BASH_REMATCH[@]:2}"; do
-        if [[ -n $match ]]; then
-          j=$(($i-2))
-          opt_flag=${BOOLEAN_FLAGS[$j]}
-          opt_name=${BOOLEAN_NAMES[$j]}
-          break
-        fi
-        : $((i++))
-      done
+      opt_flag=${BASH_REMATCH[1]}
+      name_var=_ARG_${opt_flag}_NAME
+      opt_name=${!name_var}
 
       name_upper_arg=${opt_name:-$opt_flag}
       get_name_upper
@@ -343,31 +341,17 @@ argparse.sh::parse_args() {
       if [[ $bundled_args =~ ($short_opt_regex)(.*) ]]; then
         match_o=${BASH_REMATCH[$((${#OPTIONAL_FLAGS[@]} + 2))]}
         match_o_n=${#match_o}
-
-        i=2; for match in "${BASH_REMATCH[@]:2}"; do
-          if [[ -n $match ]]; then
-            j=$(($i-2))
-            opt_flag_o=${OPTIONAL_FLAGS[$j]}
-            opt_name_o=${OPTIONAL_NAMES[$j]}
-            break
-          fi
-          : $((i++))
-        done
+        opt_flag_o=${BASH_REMATCH[1]}
+        name_var=_ARG_${opt_flag_o}_NAME
+        opt_name_o=${!name_var}
       fi
 
       if [[ $bundled_args =~ ($short_arr_regex)(.*) ]]; then
         match_a=${BASH_REMATCH[$((${#ARRAY_FLAGS[@]} + 2))]}
         match_a_n=${#match_a}
-
-        i=2; for match in "${BASH_REMATCH[@]:2}"; do
-          if [[ -n $match ]]; then
-            j=$(($i-2))
-            opt_flag_a=${ARRAY_FLAGS[$j]}
-            opt_name_a=${ARRAY_NAMES[$j]}
-            break
-          fi
-          : $((i++))
-        done
+        opt_flag_a=${BASH_REMATCH[1]}
+        name_var=_ARG_${opt_flag_o}_NAME
+        opt_name_a=${!name_var}
       fi
 
       if [[ $match_o_n -gt -1 || $match_a_n -gt -1 ]]; then
@@ -402,17 +386,12 @@ argparse.sh::parse_args() {
       fi
 
       if [[ $bundled_args =~ ($short_flag_regex) ]]; then
-        i=2; for match in "${BASH_REMATCH[@]:2}"; do
-          if [[ -n $match ]]; then
-            j=$(($i-2))
-            opt_name=${BOOLEAN_NAMES[$j]}
-            opt_flag=${BOOLEAN_FLAGS[$j]}
-            name_upper_arg=${opt_name:-$opt_flag}
-            get_name_upper
-            export -n ARG_$name_upper=true
-          fi
-          : $((i++))
-        done
+        opt_flag=${BASH_REMATCH[1]}
+        name_var=_ARG_${opt_flag}_NAME
+        opt_name=${!name_var}
+        name_upper_arg=${opt_name:-$opt_flag}
+        get_name_upper
+        export -n ARG_$name_upper=true
       fi
       # </Bundled arguments>
 
@@ -434,16 +413,9 @@ argparse.sh::parse_args() {
 
     elif [[ $key =~ ^-($short_opt_regex) ]]; then
       shift
-      i=2; for match in "${BASH_REMATCH[@]:2}"; do
-        if [[ -n $match ]]; then
-          j=$(($i-2))
-          opt_name=${OPTIONAL_NAMES[$j]}
-          opt_flag=${OPTIONAL_FLAGS[$j]}
-          break
-        fi
-        : $((i++))
-      done
-
+      opt_flag=${BASH_REMATCH[1]}
+      name_var=_ARG_${opt_flag}_NAME
+      opt_name=${!name_var}
       if [[ $key == -$opt_flag ]]; then
         value=$1
         shift
@@ -479,16 +451,9 @@ argparse.sh::parse_args() {
 
     elif [[ $key =~ ^-($short_arr_regex) ]]; then
       shift
-      i=2; for match in "${BASH_REMATCH[@]:2}"; do
-        if [[ -n $match ]]; then
-          j=$(($i-2))
-          opt_name=${ARRAY_NAMES[$j]}
-          opt_flag=${ARRAY_FLAGS[$j]}
-          break
-        fi
-        : $((i++))
-      done
-
+      opt_flag=${BASH_REMATCH[1]}
+      name_var=_ARG_${opt_flag}_NAME
+      opt_name=${!name_var}
       if [[ $key == -$opt_flag ]]; then
         value=$1
         shift
@@ -523,6 +488,8 @@ argparse.sh::parse_args() {
     export -n ARG_$name_upper="$pos_val"
     : $((i++))
   done
+
+  unset ${!_ARG_*}
 
   set -- "${POSITIONAL[@]}"
 }

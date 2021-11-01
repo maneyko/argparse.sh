@@ -28,7 +28,7 @@ arg_optional   "[percentage]             [Percent of file to process. Default: '
 arg_array      "[numbers]            [n] [Numbers to add together. Default is: [${ARG_NUMBERS[@]}]]"
 arg_array      "[host]                   [Output host destinations. Example: '8.8.8.8']"
 arg_boolean    "[checks]             [c] [Perform validation checks.]"
-arg_optional   "[perl-regex-pattern] [r] [Perl regex pattern to use when searching files. Default: '$ARG_PERL_REGEX_PATTERN']"
+arg_optional   "[perl-regex-pattern] [] [Perl regex pattern to use when searching files. Default: '$ARG_PERL_REGEX_PATTERN']"
 arg_boolean    "[quiet]              [q] [Execute quietly.]"
 arg_optional   "                     [e] [Execute an arbitrary Perl command.]"
 
