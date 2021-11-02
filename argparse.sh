@@ -349,7 +349,7 @@ argparse.sh::parse_args() {
         match_a=${BASH_REMATCH[@]: -1}
         match_a_n=${#match_a}
         opt_flag_a=${BASH_REMATCH[1]}
-        name_var=_ARG_${opt_flag_o}_NAME
+        name_var=_ARG_${opt_flag_a}_NAME
         opt_name_a=${!name_var}
       fi
 
