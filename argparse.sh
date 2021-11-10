@@ -384,14 +384,15 @@ argparse.sh::parse_args() {
         fi
       fi
 
-      if [[ $bundled_args =~ ($short_flag_regex) ]]; then
+      while [[ $bundled_args =~ ($short_flag_regex) ]]; do
         opt_flag=${BASH_REMATCH[1]}
         name_var=_ARG_${opt_flag}_NAME
         opt_name=${!name_var}
         name_upper_arg=${opt_name:-$opt_flag}
         get_name_upper
         export -n ARG_$name_upper=true
-      fi
+        bundled_args=${bundled_args//$opt_flag}
+      done
       # </Bundled arguments>
 
     elif [[ $key =~ ^--($long_opt_regex) ]]; then
