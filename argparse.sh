@@ -152,20 +152,20 @@ HELP_DESCRIPTION=
 
 # Bold print.
 # @param text [String]
-bprint() { printf -- "%b" "\033[1m$1\033[0m"; }
+bprint() { printf -- '%b' "\033[1m$1\033[0m"; }
 
 # Color print.
 #
 # @param number [Integer]
 # @param text   [String]
-cprint()   { printf -- "%b" "\033[38;5;$1m$2\033[0m"; }
+cprint()   { printf -- '%b' "\033[38;5;$1m$2\033[0m"; }
 cprint_q() {  cprint_string="\033[38;5;$1m$2\033[0m"; }
 
 impossible_match_pat='$.^'
 optional_space_pat='([[:space:]]+)?'
-arg_name_pat="([0-9A-Za-z_-]{2,})"
-arg_flag_pat="([[:alnum:]]{1,2})"
-arg_help_pat="(\[(.*)\])"
+arg_name_pat='([0-9A-Za-z_-]{2,})'
+arg_flag_pat='([[:alnum:]]{1,2})'
+arg_help_pat='(\[(.*)\])'
 arg_positional_pat="\[${arg_name_pat}\]${optional_space_pat}${arg_help_pat}?"
 three_arg_pat="\[${arg_name_pat}?\]?${optional_space_pat}\[?${arg_flag_pat}?\]${optional_space_pat}${arg_help_pat}?"
 
@@ -245,12 +245,12 @@ arg_help() {
   BOOLEAN_DESCRIPTIONS[${#BOOLEAN_DESCRIPTIONS[@]}]='Print this help message.'
 
   export -n _ARG_h_NAME=help
-  long_flag_regex+="(help)|"
-  short_flag_regex+="(h)|"
+  long_flag_regex+='(help)|'
+  short_flag_regex+='(h)|'
 }
 
 get_name_upper() {
-  local res=${name_upper_arg//-/_}
+  local res=${1//-/_}
   res=${res//a/A}
   res=${res//b/B}
   res=${res//c/C}
@@ -316,15 +316,13 @@ argparse.sh::parse_args() {
     shift
 
     if [[ $key =~ ^--($long_flag_regex)$ ]]; then
-      name_upper_arg=${BASH_REMATCH[1]}
-      get_name_upper
+      get_name_upper ${BASH_REMATCH[1]}
       export -n ARG_$name_upper=true
 
     elif [[ $key =~ ^-($short_flag_regex) ]]; then
       opt_flag=${BASH_REMATCH[1]}
       name_var=_ARG_${opt_flag}_NAME
-      name_upper_arg=${!name_var}
-      get_name_upper
+      get_name_upper ${!name_var}
       export -n ARG_$name_upper=true
 
       bundled_args=${key#-$opt_flag}
@@ -359,8 +357,7 @@ argparse.sh::parse_args() {
           bundled_name=$opt_name_a
           value=$match_a
         fi
-        name_upper_arg=$bundled_name
-        get_name_upper
+        get_name_upper $bundled_name
         if [[ -z $value ]]; then
           value=$1
           shift
@@ -383,8 +380,7 @@ argparse.sh::parse_args() {
       while [[ $bundled_args =~ ($short_flag_regex) ]]; do
         opt_flag=${BASH_REMATCH[1]}
         name_var=_ARG_${opt_flag}_NAME
-        name_upper_arg=${!name_var}
-        get_name_upper
+        get_name_upper ${!name_var}
         export -n ARG_$name_upper=true
         bundled_args=${bundled_args//$opt_flag}
       done
@@ -392,8 +388,7 @@ argparse.sh::parse_args() {
 
     elif [[ $key =~ ^--($long_opt_regex) ]]; then
       opt_name=${BASH_REMATCH[1]}
-      name_upper_arg=$opt_name
-      get_name_upper
+      get_name_upper $opt_name
 
       if [[ $key == --$opt_name ]]; then
         value=$1
@@ -409,8 +404,7 @@ argparse.sh::parse_args() {
     elif [[ $key =~ ^-($short_opt_regex) ]]; then
       opt_flag=${BASH_REMATCH[1]}
       name_var=_ARG_${opt_flag}_NAME
-      name_upper_arg=${!name_var}
-      get_name_upper
+      get_name_upper ${!name_var}
 
       if [[ $key == -$opt_flag ]]; then
         value=$1
@@ -430,8 +424,7 @@ argparse.sh::parse_args() {
       else
         continue
       fi
-      name_upper_arg=$opt_name
-      get_name_upper
+      get_name_upper $opt_name
 
       found_name=_found_$name_upper
 
@@ -444,8 +437,7 @@ argparse.sh::parse_args() {
     elif [[ $key =~ ^-($short_arr_regex) ]]; then
       opt_flag=${BASH_REMATCH[1]}
       name_var=_ARG_${opt_flag}_NAME
-      name_upper_arg=${!name_var}
-      get_name_upper
+      get_name_upper ${!name_var}
 
       if [[ $key == -$opt_flag ]]; then
         value=$1
@@ -472,8 +464,7 @@ argparse.sh::parse_args() {
   fi
 
   i=0; for pos_val in "${POSITIONAL[@]}"; do
-    name_upper_arg=${POSITIONAL_NAMES[$i]}
-    get_name_upper
+    get_name_upper ${POSITIONAL_NAMES[$i]}
     export -n ARG_$name_upper="$pos_val"
     : $((i++))
   done
@@ -489,7 +480,7 @@ print_help() {
   local X_OPT=$(($HELP_WIDTH + 23))
   local X_OPT_NL=$(($HELP_WIDTH - 3))
   local opt_flag opt_name flag_disp printf_s var
-  bprint "usage:"
+  bprint 'usage:'
   printf_s="  ${0##*/} "
   for p_name in "${POSITIONAL_NAMES[@]}"; do
     printf_s+="[$p_name] "
@@ -533,7 +524,7 @@ print_help() {
   fi
   printf -- "%b\n%b\n" "$printf_s" "$HELP_DESCRIPTION"
   [[ -n $has_any_optional_flags || ${#POSITIONAL_NAMES[@]} -gt 0 ]] && echo
-  [[ ${#POSITIONAL_NAMES[@]} -gt 0 ]] && echo "positional arguments:"
+  [[ ${#POSITIONAL_NAMES[@]} -gt 0 ]] && echo 'positional arguments:'
   printf_s=
   i=0; for pos_name in "${POSITIONAL_NAMES[@]}"; do
     cprint_q 3 "$pos_name"
@@ -550,7 +541,7 @@ print_help() {
     : $((i++))
   done
   [[ ${#POSITIONAL_NAMES[@]} -gt 0 ]] && echo
-  [[ -n $has_any_optional_flags ]] && echo "optional arguments:"
+  [[ -n $has_any_optional_flags ]] && echo 'optional arguments:'
   i=0; for bool_name in "${BOOLEAN_NAMES[@]}"; do
     bool_flag=${BOOLEAN_FLAGS[$i]}
     if [[ -n $bool_flag ]]; then
@@ -639,5 +630,5 @@ print_help() {
     done < <(echo "${ARRAY_DESCRIPTIONS[$i]}")
     : $((i++))
   done
-  printf -- "%b" "$printf_s"
+  printf -- '%b' "$printf_s"
 }
