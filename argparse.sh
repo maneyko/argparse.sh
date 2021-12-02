@@ -191,7 +191,7 @@ arg_boolean() {
     BOOLEAN_FLAGS[${#BOOLEAN_FLAGS[@]}]=$opt_flag
     BOOLEAN_DESCRIPTIONS[${#BOOLEAN_DESCRIPTIONS[@]}]=${BASH_REMATCH[6]}
 
-    export -n _ARG_${opt_flag:-${opt_name//-/_}}_NAME=$opt_name
+    export -n _ARG_${opt_flag:-${opt_name//-/_}}_NAME=${opt_name:-$opt_flag}
     long_flag_regex+="(${opt_name:-$impossible_match_pat})|"
     short_flag_regex+="(${opt_flag:-$impossible_match_pat})|"
   fi
@@ -210,7 +210,7 @@ arg_optional() {
     OPTIONAL_FLAGS[${#OPTIONAL_FLAGS[@]}]=$opt_flag
     OPTIONAL_DESCRIPTIONS[${#OPTIONAL_DESCRIPTIONS[@]}]=${BASH_REMATCH[6]}
 
-    export -n _ARG_${opt_flag:-${opt_name//-/_}}_NAME=$opt_name
+    export -n _ARG_${opt_flag:-${opt_name//-/_}}_NAME=${opt_name:-$opt_flag}
     long_opt_regex+="(${opt_name:-$impossible_match_pat})|"
     short_opt_regex+="(${opt_flag:-$impossible_match_pat})|"
   fi
@@ -229,7 +229,7 @@ arg_array() {
     ARRAY_FLAGS[${#ARRAY_FLAGS[@]}]=$opt_flag
     ARRAY_DESCRIPTIONS[${#ARRAY_DESCRIPTIONS[@]}]=${BASH_REMATCH[6]}
 
-    export -n _ARG_${opt_flag:-${opt_name//-/_}}_NAME=$opt_name
+    export -n _ARG_${opt_flag:-${opt_name//-/_}}_NAME=${opt_name:-$opt_flag}
     long_arr_regex+="(${opt_name:-$impossible_match_pat})|"
     short_arr_regex+="(${opt_flag:-$impossible_match_pat})|"
   fi
@@ -316,19 +316,17 @@ argparse.sh::parse_args() {
     shift
 
     if [[ $key =~ ^--($long_flag_regex)$ ]]; then
-      opt_name=${BASH_REMATCH[1]}
-      name_upper_arg=$opt_name
+      name_upper_arg=${BASH_REMATCH[1]}
       get_name_upper
       export -n ARG_$name_upper=true
 
     elif [[ $key =~ ^-($short_flag_regex) ]]; then
       opt_flag=${BASH_REMATCH[1]}
       name_var=_ARG_${opt_flag}_NAME
-      opt_name=${!name_var}
-
-      name_upper_arg=${opt_name:-$opt_flag}
+      name_upper_arg=${!name_var}
       get_name_upper
       export -n ARG_$name_upper=true
+
       bundled_args=${key#-$opt_flag}
       [[ -z $bundled_args ]] && continue
 
@@ -355,15 +353,13 @@ argparse.sh::parse_args() {
 
       if [[ $match_o_n -gt -1 || $match_a_n -gt -1 ]]; then
         if [[ $match_o_n -ge $match_a_n ]]; then
-          bundled_flag=$opt_flag_o
           bundled_name=$opt_name_o
           value=$match_o
         else
-          bundled_flag=$opt_flag_a
           bundled_name=$opt_name_a
           value=$match_a
         fi
-        name_upper_arg=${bundled_name:-$bundled_flag}
+        name_upper_arg=$bundled_name
         get_name_upper
         if [[ -z $value ]]; then
           value=$1
@@ -387,8 +383,7 @@ argparse.sh::parse_args() {
       while [[ $bundled_args =~ ($short_flag_regex) ]]; do
         opt_flag=${BASH_REMATCH[1]}
         name_var=_ARG_${opt_flag}_NAME
-        opt_name=${!name_var}
-        name_upper_arg=${opt_name:-$opt_flag}
+        name_upper_arg=${!name_var}
         get_name_upper
         export -n ARG_$name_upper=true
         bundled_args=${bundled_args//$opt_flag}
@@ -397,6 +392,9 @@ argparse.sh::parse_args() {
 
     elif [[ $key =~ ^--($long_opt_regex) ]]; then
       opt_name=${BASH_REMATCH[1]}
+      name_upper_arg=$opt_name
+      get_name_upper
+
       if [[ $key == --$opt_name ]]; then
         value=$1
         shift
@@ -406,23 +404,20 @@ argparse.sh::parse_args() {
         continue
       fi
 
-      name_upper_arg=$opt_name
-      get_name_upper
       export -n ARG_$name_upper="$value"
 
     elif [[ $key =~ ^-($short_opt_regex) ]]; then
       opt_flag=${BASH_REMATCH[1]}
       name_var=_ARG_${opt_flag}_NAME
-      opt_name=${!name_var}
+      name_upper_arg=${!name_var}
+      get_name_upper
+
       if [[ $key == -$opt_flag ]]; then
         value=$1
         shift
       else
         value=${key#-$opt_flag}
       fi
-
-      name_upper_arg=${opt_name:-$opt_flag}
-      get_name_upper
       export -n ARG_$name_upper="$value"
 
     elif [[ $key =~ ^--($long_arr_regex) ]]; then
@@ -449,16 +444,15 @@ argparse.sh::parse_args() {
     elif [[ $key =~ ^-($short_arr_regex) ]]; then
       opt_flag=${BASH_REMATCH[1]}
       name_var=_ARG_${opt_flag}_NAME
-      opt_name=${!name_var}
+      name_upper_arg=${!name_var}
+      get_name_upper
+
       if [[ $key == -$opt_flag ]]; then
         value=$1
         shift
       else
         value=${key#-$opt_flag}
       fi
-
-      name_upper_arg=${opt_name:-$opt_flag}
-      get_name_upper
 
       found_name=_found_$name_upper
 
