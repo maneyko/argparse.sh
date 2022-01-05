@@ -523,9 +523,9 @@ print_help() {
     unset has_any_optional_flags
   fi
   printf -- "%b\n%b\n" "$printf_s" "$HELP_DESCRIPTION"
-  [[ -n $has_any_optional_flags || ${#POSITIONAL_NAMES[@]} -gt 0 ]] && echo
-  [[ ${#POSITIONAL_NAMES[@]} -gt 0 ]] && echo 'positional arguments:'
   printf_s=
+  [[ -n $has_any_optional_flags || ${#POSITIONAL_NAMES[@]} -gt 0 ]] && printf_s+="\n"
+  [[ ${#POSITIONAL_NAMES[@]} -gt 0 ]]                               && printf_s+="positional arguments:\n"
   i=0; for pos_name in "${POSITIONAL_NAMES[@]}"; do
     cprint_q 3 "$pos_name"
     j=
