@@ -540,8 +540,8 @@ print_help() {
     done < <(echo "${POSITIONAL_DESCRIPTIONS[$i]}")
     : $((i++))
   done
-  [[ ${#POSITIONAL_NAMES[@]} -gt 0 ]] && echo
-  [[ -n $has_any_optional_flags ]] && echo 'optional arguments:'
+  [[ ${#POSITIONAL_NAMES[@]} -gt 0 ]] && printf_s+="\n"
+  [[ -n $has_any_optional_flags ]]    && printf_s+="optional arguments:\n"
   i=0; for bool_name in "${BOOLEAN_NAMES[@]}"; do
     bool_flag=${BOOLEAN_FLAGS[$i]}
     if [[ -n $bool_flag ]]; then
