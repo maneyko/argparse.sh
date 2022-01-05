@@ -539,8 +539,8 @@ print_help() {
   fi
   printf -- "%b\n%b\n" "$printf_s" "$HELP_DESCRIPTION"
   printf_s=
-  [[ ${#POSITIONAL_NAMES[@]} -gt 0 ]] && printf_s+="\n"
-  [[ -n $has_any_optional_flags ]]    && printf_s+="optional arguments:\n"
+  [[ -n $has_any_optional_flags || ${#POSITIONAL_NAMES[@]} -gt 0 ]] && printf_s+="\n"
+  [[ ${#POSITIONAL_NAMES[@]} -gt 0 ]]                               && printf_s+="positional arguments:\n"
   i=0; for pos_name in "${POSITIONAL_NAMES[@]}"; do
     cprint_q 3 "$pos_name"
     j=
@@ -555,8 +555,8 @@ print_help() {
     done < <(echo "${POSITIONAL_DESCRIPTIONS[$i]}")
     : $((i++))
   done
-  [[ ${#POSITIONAL_NAMES[@]} -gt 0 ]] && echo
-  [[ -n $has_any_optional_flags ]] && echo "optional arguments:"
+  [[ ${#POSITIONAL_NAMES[@]} -gt 0 ]] && printf_s+="\n"
+  [[ -n $has_any_optional_flags ]]    && printf_s+="optional arguments:\n"
   i=0; for bool_name in "${BOOLEAN_NAMES[@]}"; do
     bool_flag=${BOOLEAN_FLAGS[$i]}
     if [[ -n $bool_flag ]]; then
