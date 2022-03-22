@@ -352,9 +352,11 @@ argparse.sh::parse_args() {
       if [[ $match_o_n -gt -1 || $match_a_n -gt -1 ]]; then
         if [[ $match_o_n -ge $match_a_n ]]; then
           bundled_name=$opt_name_o
+          bundled_flag=$opt_flag_o
           value=$match_o
         else
           bundled_name=$opt_name_a
+          bundled_flag=$opt_flag_a
           value=$match_a
         fi
         get_name_upper $bundled_name
