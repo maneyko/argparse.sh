@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euox pipefail
+
 source "${0%/*}/argparse.sh"
 
 ARG_NUMBERS=(1 2 3)
@@ -32,30 +34,34 @@ arg_optional   "[perl-regex-pattern] [r] [Perl regex pattern to use when searchi
 arg_boolean    "[quiet]              [q] [Execute quietly.]"
 arg_optional   "                     [e] [Execute an arbitrary Perl command.]"
 
-read -d '' helptxt << EOT
+# read -d '' helptxt << EOT
+# foo
+# EOT
+# arg_help "[\n${helptxt:-}]"
+
+arg_help "[
 This file illustrates how argparse.sh can be used
 The help can be multiple lines
-EOT
-
-arg_help "[\n$helptxt]"
+]"
 parse_args
 
 cat << EOT
-ARG_INFILE:             $ARG_INFILE
-ARG_OUTFILE:            $ARG_OUTFILE
-ARG_PORT_NUMBER:        $ARG_PORT_NUMBER
-ARG_OUTPUTS:            $ARG_OUTPUTS
-ARG_VERBOSE:            $ARG_VERBOSE
-ARG_F:                  $ARG_F
-ARG_DELIMITER:          $ARG_DELIMITER
-ARG_VERSION:            $ARG_VERSION
-ARG_PERCENTAGE:         $ARG_PERCENTAGE
-ARG_NUMBERS:            ${ARG_NUMBERS[@]}
-ARG_HOST:               ${ARG_HOST[@]}
-ARG_CHECKS:             $ARG_CHECKS
-ARG_PERL_REGEX_PATTERN: $ARG_PERL_REGEX_PATTERN
-ARG_QUIET:              $ARG_QUIET
-ARG_E:                  $ARG_E
+ARG_INFILE:             ${ARG_INFILE:-}
+ARG_OUTFILE:            ${ARG_OUTFILE:-}
+ARG_PORT_NUMBER:        ${ARG_PORT_NUMBER:-}
+ARG_OUTPUTS:            ${ARG_OUTPUTS:-}
+ARG_VERBOSE:            ${ARG_VERBOSE:-}
+ARG_F:                  ${ARG_F:-}
+ARG_DELIMITER:          ${ARG_DELIMITER:-}
+ARG_VERSION:            ${ARG_VERSION:-}
+ARG_PERCENTAGE:         ${ARG_PERCENTAGE:-}
+ARG_NUMBERS:            ${ARG_NUMBERS[@]:-}
+ARG_HOST:               ${ARG_HOST[@]:-}
+ARG_CHECKS:             ${ARG_CHECKS:-}
+ARG_PERL_REGEX_PATTERN: ${ARG_PERL_REGEX_PATTERN:-}
+ARG_QUIET:              ${ARG_QUIET:-}
+ARG_E:                  ${ARG_E:-}
+POSITIONAL:             ${POSITIONAL[@]:-}
 
 Script '${__FILE__##*/}' is in '$__DIR__'
 EOT

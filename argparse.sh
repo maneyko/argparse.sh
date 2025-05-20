@@ -288,7 +288,7 @@ get__dir__() {
 }
 
 parse_args() {
-  argparse.sh::parse_args "${ARGS_ARR[@]}"
+  argparse.sh::parse_args "${ARGS_ARR[@]:-}"
   get__dir__
   __FILE__=$__DIR__/${0##*/}
 }
@@ -369,11 +369,17 @@ argparse.sh::parse_args() {
         if [[ $match_a_n -gt $match_o_n ]]; then
           found_name=_found_$name_upper
 
-          if [[ -z ${!found_name} ]]; then
+          if [[ -z ${!found_name:-} ]]; then
             unset ARG_$name_upper
             export -n $found_name=true
           fi
-          eval "ARG_$name_upper[\${#ARG_$name_upper[@]}]=\$value"
+          var_name="ARG_$name_upper"
+          if [[ ${!var_name+x} ]]; then
+            len="\${#$var_name[@]}"
+          else
+            len=0
+          fi
+          eval "$var_name[$len]=\$value"
         else
           export -n ARG_$name_upper="$value"
         fi
@@ -430,11 +436,18 @@ argparse.sh::parse_args() {
 
       found_name=_found_$name_upper
 
-      if [[ -z ${!found_name} ]]; then
+      if [[ -z ${!found_name:-} ]]; then
         unset ARG_$name_upper
         export -n $found_name=true
       fi
-      eval "ARG_$name_upper[\${#ARG_$name_upper[@]}]=\$value"
+
+      var_name="ARG_$name_upper"
+      if [[ ${!var_name+x} ]]; then
+        len="\${#$var_name[@]}"
+      else
+        len=0
+      fi
+      eval "$var_name[$len]=\$value"
 
     elif [[ $key =~ ^-($short_arr_regex) ]]; then
       opt_flag=${BASH_REMATCH[1]}
@@ -450,30 +463,40 @@ argparse.sh::parse_args() {
 
       found_name=_found_$name_upper
 
-      if [[ -z ${!found_name} ]]; then
+      if [[ -z ${!found_name:-} ]]; then
         unset ARG_$name_upper
         export -n $found_name=true
       fi
-      eval "ARG_$name_upper[\${#ARG_$name_upper[@]}]=\$value"
+
+      var_name="ARG_$name_upper"
+      if [[ ${!var_name+x} ]]; then
+        len="\${#$var_name[@]}"
+      else
+        len=0
+      fi
+      eval "$var_name[$len]=\$value"
     else
       POSITIONAL[${#POSITIONAL[@]}]=$key
     fi
   done
 
-  if [[ -n $ARG_HELP ]]; then
+  if [[ -n ${ARG_HELP:-} ]]; then
     print_help
     exit 0
   fi
 
-  i=0; for pos_val in "${POSITIONAL[@]}"; do
-    get_name_upper ${POSITIONAL_NAMES[$i]}
-    export -n ARG_$name_upper="$pos_val"
+  i=0; for pos_val in "${POSITIONAL[@]+${POSITIONAL[@]}}"; do
+    name=${POSITIONAL_NAMES[$i]:-}
+    if [[ -n $name ]]; then
+      get_name_upper $name
+      export -n ARG_$name_upper="$pos_val"
+    fi
     : $((i++))
   done
 
   unset ${!_ARG_*}
 
-  set -- "${POSITIONAL[@]}"
+  set -- "${POSITIONAL[@]+${POSITIONAL[@]}}"
 }
 
 print_help() {
@@ -484,10 +507,10 @@ print_help() {
   local opt_flag opt_name flag_disp printf_s var
   bprint 'usage:'
   printf_s="  ${0##*/} "
-  for p_name in "${POSITIONAL_NAMES[@]}"; do
+  for p_name in "${POSITIONAL_NAMES[@]+${POSITIONAL_NAMES[@]}}"; do
     printf_s+="[$p_name] "
   done
-  i=0; for bool_name in "${BOOLEAN_NAMES[@]}"; do
+  i=0; for bool_name in "${BOOLEAN_NAMES[@]+${BOOLEAN_NAMES[@]}}"; do
     if [[ -n $bool_name ]]; then
       printf_s+="[--$bool_name] "
     else
@@ -495,7 +518,7 @@ print_help() {
     fi
     : $((i++))
   done
-  i=0; for opt_name in "${OPTIONAL_NAMES[@]}"; do
+  i=0; for opt_name in "${OPTIONAL_NAMES[@]+${OPTIONAL_NAMES[@]}}"; do
     : ${opt_name:=STRING}
     opt_flag=${OPTIONAL_FLAGS[$i]}
     if [[ -n $opt_flag ]]; then
@@ -505,7 +528,7 @@ print_help() {
     fi
     : $((i++))
   done
-  i=0; for opt_flag in "${ARRAY_FLAGS[@]}"; do
+  i=0; for opt_flag in "${ARRAY_FLAGS[@]+${ARRAY_FLAGS[@]}}"; do
     opt_name="${ARRAY_NAMES[$i]}"
     : ${opt_name:=STRING}
     if [[ -n $opt_flag ]]; then
@@ -528,7 +551,7 @@ print_help() {
   printf_s=
   [[ -n $has_any_optional_flags || ${#POSITIONAL_NAMES[@]} -gt 0 ]] && printf_s+="\n"
   [[ ${#POSITIONAL_NAMES[@]} -gt 0 ]]                               && printf_s+="positional arguments:\n"
-  i=0; for pos_name in "${POSITIONAL_NAMES[@]}"; do
+  i=0; for pos_name in "${POSITIONAL_NAMES[@]+${POSITIONAL_NAMES[@]}}"; do
     cprint_q 3 "$pos_name"
     j=
     while read -r; do
@@ -573,7 +596,7 @@ print_help() {
     done < <(echo "${BOOLEAN_DESCRIPTIONS[$i]}")
     : $((i++))
   done
-  i=0; for opt_name in "${OPTIONAL_NAMES[@]}"; do
+  i=0; for opt_name in "${OPTIONAL_NAMES[@]+${OPTIONAL_NAMES[@]}}"; do
     opt_flag=${OPTIONAL_FLAGS[$i]}
 
     if [[ -n $opt_flag ]]; then
@@ -603,7 +626,7 @@ print_help() {
     done < <(echo "${OPTIONAL_DESCRIPTIONS[$i]}")
     : $((i++))
   done
-  i=0; for opt_name in "${ARRAY_NAMES[@]}"; do
+  i=0; for opt_name in "${ARRAY_NAMES[@]+${ARRAY_NAMES[@]}}"; do
     opt_flag=${ARRAY_FLAGS[$i]}
     if [[ -n $opt_flag ]]; then
       cprint_q 3 "-$opt_flag"
