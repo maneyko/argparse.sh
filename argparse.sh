@@ -35,7 +35,7 @@
 #     arg_optional   "[expression] [e] [Expression passed directly to ( awk '{print ...}' )]"
 #     parse_args
 #
-#     echo $ARG_INFILE
+#     echo $ARG_INPUT_FILE
 #     # => input-data.txt
 #
 #     echo $ARG_DELIMITER
@@ -55,8 +55,8 @@
 #
 # * arg_positional
 #   - This parses positional arguments to your script
-#   - The value will be accessible to you via `$ARG_INFILE' after calling `parse_args'.
-#   - Usage example: arg_positional "[infile] [The input file]"
+#   - The value will be accessible to you via `$ARG_INPUT_FILE' after calling `parse_args'.
+#   - Usage example: arg_positional "[input-file] [The input file]"
 #   - CLI example: ./myscript.sh myfile.txt
 #
 # * arg_optional

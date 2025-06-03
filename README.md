@@ -34,7 +34,7 @@ arg_optional   "[delimiter]  [d] [Input file field separator. Default: '$ARG_DEL
 arg_optional   "[expression] [e] [Expression passed directly to \`awk '{print ...}'\`]"
 parse_args
 
-echo $ARG_INFILE
+echo $ARG_INPUT_FILE
 # => input-data.txt
 
 echo $ARG_DELIMITER
@@ -51,7 +51,7 @@ awk -F "$ARG_DELIMITER" "{print $ARG_EXPRESSION}" "$ARG_INPUT_FILE"
 ```
 
 To get a better idea of the usage in a real shell script, look at
-[advanced-usage-example.sh](https://github.com/maneyko/argparse.sh/blob/master/advanced-usage-example.sh).
+[advanced-usage-example.sh](https://github.com/maneyko/argparse.sh/blob/master/examples/advanced-usage-example.sh).
 The script may be called like this (note that some default values are defined):
 
 ```bash

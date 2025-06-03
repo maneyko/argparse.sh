@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source "${0%/*}/argparse.sh"
+source "${0%/*}/../argparse.sh"
 
 ARG_NUMBERS=(1 2 3)
 ARG_PERL_REGEX_PATTERN='/[[:alnum:]]/'

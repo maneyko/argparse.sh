@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source "$(dirname "$0")/argparse.sh"
+source "$(dirname "$0")/../argparse.sh"
 
 # Set default values.
 ARG_INPUT_FILE='/etc/shells'
