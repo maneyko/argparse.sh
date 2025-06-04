@@ -185,8 +185,8 @@ long_flag_regex=
 short_flag_regex=
 arg_boolean() {
   if [[ "$@" =~ $three_arg_pat ]]; then
-    opt_name=${BASH_REMATCH[1]}
-    opt_flag=${BASH_REMATCH[3]}
+    local opt_name=${BASH_REMATCH[1]}
+    local opt_flag=${BASH_REMATCH[3]}
     BOOLEAN_NAMES[${#BOOLEAN_NAMES[@]}]=$opt_name
     BOOLEAN_FLAGS[${#BOOLEAN_FLAGS[@]}]=$opt_flag
     BOOLEAN_DESCRIPTIONS[${#BOOLEAN_DESCRIPTIONS[@]}]=${BASH_REMATCH[6]}
@@ -204,8 +204,8 @@ long_opt_regex=
 short_opt_regex=
 arg_optional() {
   if [[ "$@" =~ $three_arg_pat ]]; then
-    opt_name=${BASH_REMATCH[1]}
-    opt_flag=${BASH_REMATCH[3]}
+    local opt_name=${BASH_REMATCH[1]}
+    local opt_flag=${BASH_REMATCH[3]}
     OPTIONAL_NAMES[${#OPTIONAL_NAMES[@]}]=$opt_name
     OPTIONAL_FLAGS[${#OPTIONAL_FLAGS[@]}]=$opt_flag
     OPTIONAL_DESCRIPTIONS[${#OPTIONAL_DESCRIPTIONS[@]}]=${BASH_REMATCH[6]}
@@ -223,8 +223,8 @@ long_arr_regex=
 short_arr_regex=
 arg_array() {
   if [[ "$@" =~ $three_arg_pat ]]; then
-    opt_name=${BASH_REMATCH[1]}
-    opt_flag=${BASH_REMATCH[3]}
+    local opt_name=${BASH_REMATCH[1]}
+    local opt_flag=${BASH_REMATCH[3]}
     ARRAY_NAMES[${#ARRAY_NAMES[@]}]=$opt_name
     ARRAY_FLAGS[${#ARRAY_FLAGS[@]}]=$opt_flag
     ARRAY_DESCRIPTIONS[${#ARRAY_DESCRIPTIONS[@]}]=${BASH_REMATCH[6]}
@@ -311,8 +311,8 @@ argparse.sh::parse_args() {
   local match opt_name opt_flag name_var value
 
   while [[ $# -gt 0 ]]; do
-    key=$1
-    value=
+    local key=$1
+    local value=
     shift
 
     if [[ $key =~ ^--($long_flag_regex)$ ]]; then
@@ -320,43 +320,43 @@ argparse.sh::parse_args() {
       export -n ARG_$name_upper=true
 
     elif [[ $key =~ ^-($short_flag_regex) ]]; then
-      opt_flag=${BASH_REMATCH[1]}
-      name_var=_ARG_${opt_flag}_NAME
+      local opt_flag=${BASH_REMATCH[1]}
+      local name_var=_ARG_${opt_flag}_NAME
       get_name_upper ${!name_var}
       export -n ARG_$name_upper=true
 
-      bundled_args=${key#-$opt_flag}
+      local bundled_args=${key#-$opt_flag}
       [[ -z $bundled_args ]] && continue
 
       # <Bundled arguments>
 
-      match_o_n=-1
-      match_a_n=-1
+      local match_o_n=-1
+      local match_a_n=-1
 
       if [[ $bundled_args =~ ($short_opt_regex)(.*) ]]; then
-        match_o=${BASH_REMATCH[@]: -1}
+        local match_o=${BASH_REMATCH[@]: -1}
         match_o_n=${#match_o}
-        opt_flag_o=${BASH_REMATCH[1]}
+        local opt_flag_o=${BASH_REMATCH[1]}
         name_var=_ARG_${opt_flag_o}_NAME
-        opt_name_o=${!name_var}
+        local opt_name_o=${!name_var}
       fi
 
       if [[ $bundled_args =~ ($short_arr_regex)(.*) ]]; then
-        match_a=${BASH_REMATCH[@]: -1}
+        local match_a=${BASH_REMATCH[@]: -1}
         match_a_n=${#match_a}
-        opt_flag_a=${BASH_REMATCH[1]}
+        local opt_flag_a=${BASH_REMATCH[1]}
         name_var=_ARG_${opt_flag_a}_NAME
-        opt_name_a=${!name_var}
+        local opt_name_a=${!name_var}
       fi
 
       if [[ $match_o_n -gt -1 || $match_a_n -gt -1 ]]; then
         if [[ $match_o_n -ge $match_a_n ]]; then
-          bundled_name=$opt_name_o
-          bundled_flag=$opt_flag_o
+          local bundled_name=$opt_name_o
+          local bundled_flag=$opt_flag_o
           value=$match_o
         else
-          bundled_name=$opt_name_a
-          bundled_flag=$opt_flag_a
+          local bundled_name=$opt_name_a
+          local bundled_flag=$opt_flag_a
           value=$match_a
         fi
         get_name_upper $bundled_name
@@ -367,7 +367,7 @@ argparse.sh::parse_args() {
         bundled_args=${bundled_args%%$bundled_flag*}
 
         if [[ $match_a_n -gt $match_o_n ]]; then
-          found_name=_found_$name_upper
+          local found_name=_found_$name_upper
 
           if [[ -z ${!found_name} ]]; then
             unset ARG_$name_upper
@@ -380,8 +380,8 @@ argparse.sh::parse_args() {
       fi
 
       while [[ $bundled_args =~ ($short_flag_regex) ]]; do
-        opt_flag=${BASH_REMATCH[1]}
-        name_var=_ARG_${opt_flag}_NAME
+        local opt_flag=${BASH_REMATCH[1]}
+        local name_var=_ARG_${opt_flag}_NAME
         get_name_upper ${!name_var}
         export -n ARG_$name_upper=true
         bundled_args=${bundled_args//$opt_flag}
@@ -389,7 +389,7 @@ argparse.sh::parse_args() {
       # </Bundled arguments>
 
     elif [[ $key =~ ^--($long_opt_regex) ]]; then
-      opt_name=${BASH_REMATCH[1]}
+      local opt_name=${BASH_REMATCH[1]}
       get_name_upper $opt_name
 
       if [[ $key == --$opt_name ]]; then
@@ -404,8 +404,8 @@ argparse.sh::parse_args() {
       export -n ARG_$name_upper="$value"
 
     elif [[ $key =~ ^-($short_opt_regex) ]]; then
-      opt_flag=${BASH_REMATCH[1]}
-      name_var=_ARG_${opt_flag}_NAME
+      local opt_flag=${BASH_REMATCH[1]}
+      local name_var=_ARG_${opt_flag}_NAME
       get_name_upper ${!name_var}
 
       if [[ $key == -$opt_flag ]]; then
@@ -417,7 +417,7 @@ argparse.sh::parse_args() {
       export -n ARG_$name_upper="$value"
 
     elif [[ $key =~ ^--($long_arr_regex) ]]; then
-      opt_name=${BASH_REMATCH[1]}
+      local opt_name=${BASH_REMATCH[1]}
       if [[ $key == --$opt_name ]]; then
         value=$1
         shift
@@ -428,7 +428,7 @@ argparse.sh::parse_args() {
       fi
       get_name_upper $opt_name
 
-      found_name=_found_$name_upper
+      local found_name=_found_$name_upper
 
       if [[ -z ${!found_name} ]]; then
         unset ARG_$name_upper
@@ -437,8 +437,8 @@ argparse.sh::parse_args() {
       eval "ARG_$name_upper[\${#ARG_$name_upper[@]}]=\$value"
 
     elif [[ $key =~ ^-($short_arr_regex) ]]; then
-      opt_flag=${BASH_REMATCH[1]}
-      name_var=_ARG_${opt_flag}_NAME
+      local opt_flag=${BASH_REMATCH[1]}
+      local name_var=_ARG_${opt_flag}_NAME
       get_name_upper ${!name_var}
 
       if [[ $key == -$opt_flag ]]; then
@@ -448,7 +448,7 @@ argparse.sh::parse_args() {
         value=${key#-$opt_flag}
       fi
 
-      found_name=_found_$name_upper
+      local found_name=_found_$name_upper
 
       if [[ -z ${!found_name} ]]; then
         unset ARG_$name_upper
@@ -465,7 +465,8 @@ argparse.sh::parse_args() {
     exit 0
   fi
 
-  i=0; for pos_val in "${POSITIONAL[@]}"; do
+  local i=0
+  for pos_val in "${POSITIONAL[@]}"; do
     get_name_upper ${POSITIONAL_NAMES[$i]}
     export -n ARG_$name_upper="$pos_val"
     : $((i++))
@@ -487,7 +488,8 @@ print_help() {
   for p_name in "${POSITIONAL_NAMES[@]}"; do
     printf_s+="[$p_name] "
   done
-  i=0; for bool_name in "${BOOLEAN_NAMES[@]}"; do
+  local i=0
+  for bool_name in "${BOOLEAN_NAMES[@]}"; do
     if [[ -n $bool_name ]]; then
       printf_s+="[--$bool_name] "
     else
@@ -495,7 +497,8 @@ print_help() {
     fi
     : $((i++))
   done
-  i=0; for opt_name in "${OPTIONAL_NAMES[@]}"; do
+  i=0
+  for opt_name in "${OPTIONAL_NAMES[@]}"; do
     : ${opt_name:=STRING}
     opt_flag=${OPTIONAL_FLAGS[$i]}
     if [[ -n $opt_flag ]]; then
@@ -505,7 +508,8 @@ print_help() {
     fi
     : $((i++))
   done
-  i=0; for opt_flag in "${ARRAY_FLAGS[@]}"; do
+  i=0
+  for opt_flag in "${ARRAY_FLAGS[@]}"; do
     opt_name="${ARRAY_NAMES[$i]}"
     : ${opt_name:=STRING}
     if [[ -n $opt_flag ]]; then
@@ -520,7 +524,7 @@ print_help() {
     ${#OPTIONAL_FLAGS[@]} -gt 0 ||
     ${#ARRAY_FLAGS[@]}    -gt 0
   ]]; then
-    has_any_optional_flags=true
+    local has_any_optional_flags=true
   else
     unset has_any_optional_flags
   fi
@@ -528,9 +532,10 @@ print_help() {
   printf_s=
   [[ -n $has_any_optional_flags || ${#POSITIONAL_NAMES[@]} -gt 0 ]] && printf_s+="\n"
   [[ ${#POSITIONAL_NAMES[@]} -gt 0 ]]                               && printf_s+="positional arguments:\n"
-  i=0; for pos_name in "${POSITIONAL_NAMES[@]}"; do
+  i=0
+  for pos_name in "${POSITIONAL_NAMES[@]}"; do
     cprint_q 3 "$pos_name"
-    j=
+    local j=
     while read -r; do
       if [[ -z $j ]]; then
         j=1
@@ -544,8 +549,9 @@ print_help() {
   done
   [[ ${#POSITIONAL_NAMES[@]} -gt 0 ]] && printf_s+="\n"
   [[ -n $has_any_optional_flags ]]    && printf_s+="optional arguments:\n"
-  i=0; for bool_name in "${BOOLEAN_NAMES[@]}"; do
-    bool_flag=${BOOLEAN_FLAGS[$i]}
+  i=0
+  for bool_name in "${BOOLEAN_NAMES[@]}"; do
+    local bool_flag=${BOOLEAN_FLAGS[$i]}
     if [[ -n $bool_flag ]]; then
       cprint_q 3 "-$bool_flag"
       flag_disp=$cprint_string
@@ -561,7 +567,7 @@ print_help() {
     if [[ -n $bool_flag && -n $bool_name ]]; then
       flag_disp=$flag_disp,
     fi
-    j=
+    local j=
     while read -r; do
       if [[ -z $j ]]; then
         j=1
@@ -573,8 +579,9 @@ print_help() {
     done < <(echo "${BOOLEAN_DESCRIPTIONS[$i]}")
     : $((i++))
   done
-  i=0; for opt_name in "${OPTIONAL_NAMES[@]}"; do
-    opt_flag=${OPTIONAL_FLAGS[$i]}
+  i=0
+  for opt_name in "${OPTIONAL_NAMES[@]}"; do
+    local opt_flag=${OPTIONAL_FLAGS[$i]}
 
     if [[ -n $opt_flag ]]; then
       cprint_q 3 "-$opt_flag"
@@ -591,7 +598,7 @@ print_help() {
     if [[ -n $opt_flag && -n $opt_name ]]; then
       flag_disp="$flag_disp,"
     fi
-    j=
+    local j=
     while read -r; do
       if [[ -z $j ]]; then
         j=1
@@ -603,8 +610,9 @@ print_help() {
     done < <(echo "${OPTIONAL_DESCRIPTIONS[$i]}")
     : $((i++))
   done
-  i=0; for opt_name in "${ARRAY_NAMES[@]}"; do
-    opt_flag=${ARRAY_FLAGS[$i]}
+  i=0
+  for opt_name in "${ARRAY_NAMES[@]}"; do
+    local opt_flag=${ARRAY_FLAGS[$i]}
     if [[ -n $opt_flag ]]; then
       cprint_q 3 "-$opt_flag"
       flag_disp=$cprint_string
@@ -620,7 +628,7 @@ print_help() {
     if [[ -n $opt_flag && -n $opt_name ]]; then
       flag_disp=$flag_disp,
     fi
-    j=
+    local j=
     while read -r; do
       if [[ -z $j ]]; then
         j=1

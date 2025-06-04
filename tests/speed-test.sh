@@ -14,7 +14,7 @@ parse_args
 N=$ARG_N_ITERATIONS
 
 execute_command() {
-  ./advanced-usage-example.sh \
+  ./examples/advanced-usage-example.sh \
     -p2020 \
     -cfr'/^\d+(\S+)\s+[[:alnum:]]/' \
     --host google.com \
@@ -34,6 +34,6 @@ done
 if [[ -n $ARG_FULL ]]; then
   echo -e "\nSpeed test for help message (N = $N) ..."
   time for (( i=0; i < $N; i++ )); do
-    ./usage-example.sh -h >/dev/null
+    ./examples/usage-example.sh -h >/dev/null
   done
 fi
