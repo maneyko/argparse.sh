@@ -35,7 +35,7 @@
 #     arg_optional   "[expression] [e] [Expression passed directly to ( awk '{print ...}' )]"
 #     parse_args
 #
-#     echo $ARG_INPUT_FILE
+#     echo $ARG_INFILE
 #     # => input-data.txt
 #
 #     echo $ARG_DELIMITER
@@ -55,8 +55,8 @@
 #
 # * arg_positional
 #   - This parses positional arguments to your script
-#   - The value will be accessible to you via `$ARG_INPUT_FILE' after calling `parse_args'.
-#   - Usage example: arg_positional "[input-file] [The input file]"
+#   - The value will be accessible to you via `$ARG_INFILE' after calling `parse_args'.
+#   - Usage example: arg_positional "[infile] [The input file]"
 #   - CLI example: ./myscript.sh myfile.txt
 #
 # * arg_optional
@@ -152,7 +152,8 @@ HELP_DESCRIPTION=
 
 # Bold print.
 # @param text [String]
-bprint() { printf -- '%b' "\033[1m$1\033[0m"; }
+bprint()   { printf -- '%b' "\033[1m$1\033[0m"; }
+bprint_q() {  bprint_string="\033[1m$1\033[0m"; }
 
 # Color print.
 #
@@ -482,8 +483,9 @@ print_help() {
   local X_OPT=$(($HELP_WIDTH + 23))
   local X_OPT_NL=$(($HELP_WIDTH - 3))
   local opt_flag opt_name flag_disp printf_s var
-  bprint 'usage:'
-  printf_s="  ${0##*/} "
+  bprint_q 'usage:'
+  printf_s=$bprint_string
+  printf_s+="  ${0##*/} "
   for p_name in "${POSITIONAL_NAMES[@]}"; do
     printf_s+="[$p_name] "
   done
@@ -515,6 +517,25 @@ print_help() {
     fi
     : $((i++))
   done
+  printf_usage=$printf_s
+  printf_s=
+  [[ ${#POSITIONAL_NAMES[@]} -gt 0 ]] && printf_s+="\npositional arguments:\n"
+  i=0; for pos_name in "${POSITIONAL_NAMES[@]}"; do
+    cprint_q 3 "$pos_name"
+    j=
+    while read -r; do
+      if [[ -z $j ]]; then
+        j=1
+        printf -v var -- "  %b\n    %b\n" "${cprint_string}" "$REPLY"
+      else
+        printf -v var -- "  %s %b\n" ' ' "$REPLY"
+      fi
+      printf_s+="$var\n"
+    done < <(echo "${POSITIONAL_DESCRIPTIONS[$i]}")
+    : $((i++))
+  done
+  printf_positional=$printf_s
+  printf_s=
   if [[
     ${#BOOLEAN_FLAGS[@]}  -gt 0 ||
     ${#OPTIONAL_FLAGS[@]} -gt 0 ||
@@ -524,26 +545,7 @@ print_help() {
   else
     unset has_any_optional_flags
   fi
-  printf -- "%b\n%b\n" "$printf_s" "$HELP_DESCRIPTION"
-  printf_s=
-  [[ -n $has_any_optional_flags || ${#POSITIONAL_NAMES[@]} -gt 0 ]] && printf_s+="\n"
-  [[ ${#POSITIONAL_NAMES[@]} -gt 0 ]]                               && printf_s+="positional arguments:\n"
-  i=0; for pos_name in "${POSITIONAL_NAMES[@]}"; do
-    cprint_q 3 "$pos_name"
-    j=
-    while read -r; do
-      if [[ -z $j ]]; then
-        j=1
-        printf -v var -- "  %-${X_POS}b %b\n" "${cprint_string}" "$REPLY"
-      else
-        printf -v var -- "  %-${X_OPT_NL}s %b\n" ' ' "$REPLY"
-      fi
-      printf_s+=$var
-    done < <(echo "${POSITIONAL_DESCRIPTIONS[$i]}")
-    : $((i++))
-  done
-  [[ ${#POSITIONAL_NAMES[@]} -gt 0 ]] && printf_s+="\n"
-  [[ -n $has_any_optional_flags ]]    && printf_s+="optional arguments:\n"
+  [[ -n $has_any_optional_flags ]]    && printf_s+="options:\n"
   i=0; for bool_name in "${BOOLEAN_NAMES[@]}"; do
     bool_flag=${BOOLEAN_FLAGS[$i]}
     if [[ -n $bool_flag ]]; then
@@ -565,13 +567,14 @@ print_help() {
     while read -r; do
       if [[ -z $j ]]; then
         j=1
-        printf -v var -- "  %-${X_OPT}b %b\n" "$flag_disp $cprint_string" "$REPLY"
+        printf -v var -- "  %b\n    %b\n" "$flag_disp $cprint_string" "$REPLY"
       else
-        printf -v var -- "  %-${X_OPT_NL}s %b\n" ' ' "$REPLY"
+        printf -v var -- "  %s %b\n" ' ' "$REPLY"
       fi
       printf_s+=$var
     done < <(echo "${BOOLEAN_DESCRIPTIONS[$i]}")
     : $((i++))
+    printf_s+="\n"
   done
   i=0; for opt_name in "${OPTIONAL_NAMES[@]}"; do
     opt_flag=${OPTIONAL_FLAGS[$i]}
@@ -595,12 +598,13 @@ print_help() {
     while read -r; do
       if [[ -z $j ]]; then
         j=1
-        printf -v var -- "  %-${X_OPT}b %b\n" "$flag_disp $cprint_string" "$REPLY"
+        printf -v var -- "  %b\n    %b\n" "$flag_disp $cprint_string" "$REPLY"
       else
-        printf -v var -- "  %-${X_OPT_NL}s %b\n" ' ' "$REPLY"
+        printf -v var -- "  %s %b\n" ' ' "$REPLY"
       fi
       printf_s+=$var
     done < <(echo "${OPTIONAL_DESCRIPTIONS[$i]}")
+    printf_s+="\n"
     : $((i++))
   done
   i=0; for opt_name in "${ARRAY_NAMES[@]}"; do
@@ -624,13 +628,19 @@ print_help() {
     while read -r; do
       if [[ -z $j ]]; then
         j=1
-        printf -v var -- "  %-${X_OPT}b %b\n" "$flag_disp $cprint_string" "$REPLY"
+        printf -v var -- "  %b\n    %b\n" "$flag_disp $cprint_string" "$REPLY"
       else
-        printf -v var -- "  %-${X_OPT_NL}s %b\n" ' ' "$REPLY"
+        printf -v var -- "  %s %b\n" ' ' "$REPLY"
       fi
       printf_s+=$var
     done < <(echo "${ARRAY_DESCRIPTIONS[$i]}")
+    printf_s+="\n"
     : $((i++))
   done
-  printf -- '%b' "$printf_s"
+  printf_optional=$printf_s
+
+  printf -- '%b' "$HELP_DESCRIPTION"
+  printf -- '%b' "$printf_positional"
+  printf -- '%b' "$printf_optional"
+  printf -- "%b\n" "$printf_usage"
 }
