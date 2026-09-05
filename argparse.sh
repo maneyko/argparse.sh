@@ -184,6 +184,7 @@ arg_positional() {
 long_flag_regex=
 short_flag_regex=
 arg_boolean() {
+  local opt_name opt_flag
   if [[ "$@" =~ $three_arg_pat ]]; then
     opt_name=${BASH_REMATCH[1]}
     opt_flag=${BASH_REMATCH[3]}
@@ -203,6 +204,7 @@ arg_boolean() {
 long_opt_regex=
 short_opt_regex=
 arg_optional() {
+  local opt_name opt_flag
   if [[ "$@" =~ $three_arg_pat ]]; then
     opt_name=${BASH_REMATCH[1]}
     opt_flag=${BASH_REMATCH[3]}
@@ -222,6 +224,7 @@ arg_optional() {
 long_arr_regex=
 short_arr_regex=
 arg_array() {
+  local opt_name opt_flag
   if [[ "$@" =~ $three_arg_pat ]]; then
     opt_name=${BASH_REMATCH[1]}
     opt_flag=${BASH_REMATCH[3]}
@@ -249,35 +252,42 @@ arg_help() {
   short_flag_regex+='(h)|'
 }
 
-get_name_upper() {
-  local res=${1//-/_}
-  res=${res//a/A}
-  res=${res//b/B}
-  res=${res//c/C}
-  res=${res//d/D}
-  res=${res//e/E}
-  res=${res//f/F}
-  res=${res//g/G}
-  res=${res//h/H}
-  res=${res//i/I}
-  res=${res//j/J}
-  res=${res//k/K}
-  res=${res//l/L}
-  res=${res//m/M}
-  res=${res//n/N}
-  res=${res//o/O}
-  res=${res//p/P}
-  res=${res//q/Q}
-  res=${res//r/R}
-  res=${res//s/S}
-  res=${res//t/T}
-  res=${res//u/U}
-  res=${res//v/V}
-  res=${res//w/W}
-  res=${res//x/X}
-  res=${res//y/Y}
-  name_upper=${res//z/Z}
-}
+if [[ ${BASH_VERSINFO[0]} -ge 4 ]]; then
+  get_name_upper() {
+    local res=${1//-/_}
+    name_upper=${res^^}
+  }
+else
+  get_name_upper() {
+    local res=${1//-/_}
+    res=${res//a/A}
+    res=${res//b/B}
+    res=${res//c/C}
+    res=${res//d/D}
+    res=${res//e/E}
+    res=${res//f/F}
+    res=${res//g/G}
+    res=${res//h/H}
+    res=${res//i/I}
+    res=${res//j/J}
+    res=${res//k/K}
+    res=${res//l/L}
+    res=${res//m/M}
+    res=${res//n/N}
+    res=${res//o/O}
+    res=${res//p/P}
+    res=${res//q/Q}
+    res=${res//r/R}
+    res=${res//s/S}
+    res=${res//t/T}
+    res=${res//u/U}
+    res=${res//v/V}
+    res=${res//w/W}
+    res=${res//x/X}
+    res=${res//y/Y}
+    name_upper=${res//z/Z}
+  }
+fi
 
 # Set $__DIR__ variable.
 # The full path of the directory of the script.
@@ -288,9 +298,21 @@ get__dir__() {
 }
 
 parse_args() {
+  # Parsing reads unset variables as empty throughout, so suspend the caller's
+  # `set -u' for the duration and put it back afterwards.
+  local nounset=
+  if [[ $- == *u* ]]; then
+    nounset=1
+    set +u
+  fi
+
   argparse.sh::parse_args "${ARGS_ARR[@]}"
   get__dir__
   __FILE__=$__DIR__/${0##*/}
+
+  if [[ -n $nounset ]]; then
+    set -u
+  fi
 }
 
 # @param args_arr
@@ -308,7 +330,9 @@ argparse.sh::parse_args() {
   short_arr_regex=${short_arr_regex%|}
   : ${short_arr_regex:=($impossible_match_pat)}
 
-  local match opt_name opt_flag name_var value
+  local opt_name opt_flag name_var value key i name_upper found_name pos_val
+  local bundled_args bundled_name bundled_flag
+  local match_o match_a match_o_n match_a_n opt_flag_o opt_flag_a opt_name_o opt_name_a
 
   while [[ $# -gt 0 ]]; do
     key=$1
@@ -471,17 +495,24 @@ argparse.sh::parse_args() {
     : $((i++))
   done
 
-  unset ${!_ARG_*}
+  unset ${!_ARG_*} ${!_found_*}
 
   set -- "${POSITIONAL[@]}"
 }
 
 print_help() {
+  # Suspend the caller's `set -u' as `parse_args' does; this is a public function.
+  local nounset=
+  if [[ $- == *u* ]]; then
+    nounset=1
+    set +u
+  fi
+
   : ${HELP_WIDTH:=30}
   local X_POS=$(($HELP_WIDTH + 10))
   local X_OPT=$(($HELP_WIDTH + 23))
   local X_OPT_NL=$(($HELP_WIDTH - 3))
-  local opt_flag opt_name flag_disp printf_s var
+  local opt_flag opt_name flag_disp printf_s var i j p_name pos_name bool_name bool_flag
   bprint 'usage:'
   printf_s="  ${0##*/} "
   for p_name in "${POSITIONAL_NAMES[@]}"; do
@@ -524,26 +555,26 @@ print_help() {
   else
     unset has_any_optional_flags
   fi
-  printf -- "%b\n%b\n" "$printf_s" "$HELP_DESCRIPTION"
+  printf -- "%s\n%b\n" "$printf_s" "$HELP_DESCRIPTION"
   printf_s=
-  [[ -n $has_any_optional_flags || ${#POSITIONAL_NAMES[@]} -gt 0 ]] && printf_s+="\n"
-  [[ ${#POSITIONAL_NAMES[@]} -gt 0 ]]                               && printf_s+="positional arguments:\n"
+  [[ -n $has_any_optional_flags || ${#POSITIONAL_NAMES[@]} -gt 0 ]] && printf_s+=$'\n'
+  [[ ${#POSITIONAL_NAMES[@]} -gt 0 ]]                               && printf_s+=$'positional arguments:\n'
   i=0; for pos_name in "${POSITIONAL_NAMES[@]}"; do
     cprint_q 3 "$pos_name"
     j=
     while read -r; do
       if [[ -z $j ]]; then
         j=1
-        printf -v var -- "  %-${X_POS}b %b\n" "${cprint_string}" "$REPLY"
+        printf -v var -- "  %-${X_POS}b %s\n" "${cprint_string}" "$REPLY"
       else
-        printf -v var -- "  %-${X_OPT_NL}s %b\n" ' ' "$REPLY"
+        printf -v var -- "  %-${X_OPT_NL}s %s\n" ' ' "$REPLY"
       fi
       printf_s+=$var
-    done < <(echo "${POSITIONAL_DESCRIPTIONS[$i]}")
+    done <<< "${POSITIONAL_DESCRIPTIONS[$i]}"
     : $((i++))
   done
-  [[ ${#POSITIONAL_NAMES[@]} -gt 0 ]] && printf_s+="\n"
-  [[ -n $has_any_optional_flags ]]    && printf_s+="optional arguments:\n"
+  [[ ${#POSITIONAL_NAMES[@]} -gt 0 ]] && printf_s+=$'\n'
+  [[ -n $has_any_optional_flags ]]    && printf_s+=$'optional arguments:\n'
   i=0; for bool_name in "${BOOLEAN_NAMES[@]}"; do
     bool_flag=${BOOLEAN_FLAGS[$i]}
     if [[ -n $bool_flag ]]; then
@@ -565,12 +596,12 @@ print_help() {
     while read -r; do
       if [[ -z $j ]]; then
         j=1
-        printf -v var -- "  %-${X_OPT}b %b\n" "$flag_disp $cprint_string" "$REPLY"
+        printf -v var -- "  %-${X_OPT}b %s\n" "$flag_disp $cprint_string" "$REPLY"
       else
-        printf -v var -- "  %-${X_OPT_NL}s %b\n" ' ' "$REPLY"
+        printf -v var -- "  %-${X_OPT_NL}s %s\n" ' ' "$REPLY"
       fi
       printf_s+=$var
-    done < <(echo "${BOOLEAN_DESCRIPTIONS[$i]}")
+    done <<< "${BOOLEAN_DESCRIPTIONS[$i]}"
     : $((i++))
   done
   i=0; for opt_name in "${OPTIONAL_NAMES[@]}"; do
@@ -595,12 +626,12 @@ print_help() {
     while read -r; do
       if [[ -z $j ]]; then
         j=1
-        printf -v var -- "  %-${X_OPT}b %b\n" "$flag_disp $cprint_string" "$REPLY"
+        printf -v var -- "  %-${X_OPT}b %s\n" "$flag_disp $cprint_string" "$REPLY"
       else
-        printf -v var -- "  %-${X_OPT_NL}s %b\n" ' ' "$REPLY"
+        printf -v var -- "  %-${X_OPT_NL}s %s\n" ' ' "$REPLY"
       fi
       printf_s+=$var
-    done < <(echo "${OPTIONAL_DESCRIPTIONS[$i]}")
+    done <<< "${OPTIONAL_DESCRIPTIONS[$i]}"
     : $((i++))
   done
   i=0; for opt_name in "${ARRAY_NAMES[@]}"; do
@@ -624,13 +655,17 @@ print_help() {
     while read -r; do
       if [[ -z $j ]]; then
         j=1
-        printf -v var -- "  %-${X_OPT}b %b\n" "$flag_disp $cprint_string" "$REPLY"
+        printf -v var -- "  %-${X_OPT}b %s\n" "$flag_disp $cprint_string" "$REPLY"
       else
-        printf -v var -- "  %-${X_OPT_NL}s %b\n" ' ' "$REPLY"
+        printf -v var -- "  %-${X_OPT_NL}s %s\n" ' ' "$REPLY"
       fi
       printf_s+=$var
-    done < <(echo "${ARRAY_DESCRIPTIONS[$i]}")
+    done <<< "${ARRAY_DESCRIPTIONS[$i]}"
     : $((i++))
   done
-  printf -- '%b' "$printf_s"
+  printf -- '%s' "$printf_s"
+
+  if [[ -n $nounset ]]; then
+    set -u
+  fi
 }

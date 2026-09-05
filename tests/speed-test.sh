@@ -14,7 +14,7 @@ parse_args
 N=$ARG_N_ITERATIONS
 
 execute_command() {
-  ./advanced-usage-example.sh \
+  ./examples/advanced-usage-example.sh \
     -p2020 \
     -cfr'/^\d+(\S+)\s+[[:alnum:]]/' \
     --host google.com \
@@ -24,7 +24,12 @@ execute_command() {
     --delimiter '/\s+/' \
     --percentage=75%
 }
-# ./advanced-usage-example.sh -p2020 -cfr'/^\d+(\S+)\s+[[:alnum:]]/' --host google.com --outputs=3 --host amazon.com -qve 'print "hello world: $1" if /^\s+(.).*$/' --delimiter '/\s+/' --percentage=75
+
+# A failing command still gets timed, and the result looks impressively fast.
+if ! execute_command >/dev/null; then
+  echo 'ERROR: the example script did not run; timings would be meaningless.' >&2
+  exit 1
+fi
 
 echo "Speed test for processing several flags (N = $N) ..."
 time for (( i=0; i < $N; i++ )); do
@@ -34,6 +39,6 @@ done
 if [[ -n $ARG_FULL ]]; then
   echo -e "\nSpeed test for help message (N = $N) ..."
   time for (( i=0; i < $N; i++ )); do
-    ./usage-example.sh -h >/dev/null
+    ./examples/usage-example.sh -h >/dev/null
   done
 fi
