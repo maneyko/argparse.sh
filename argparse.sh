@@ -292,9 +292,18 @@ fi
 # Set $__DIR__ variable.
 # The full path of the directory of the script.
 get__dir__() {
-  cd "${0%/*}"
-  __DIR__=$PWD
-  cd "$OLDPWD"
+  # Returning to $OLDPWD unconditionally would move the caller when the first
+  # `cd' never happened. A failure here is reported by `parse_args', so this
+  # must not exit non-zero and trip the caller's `set -e' on the way.
+  if cd "${0%/*}" 2>/dev/null; then
+    __DIR__=$PWD
+    cd "$OLDPWD"
+  else
+    # Nothing here would be better than a guess, and a guess that happens to
+    # exist is the silent failure this is meant to catch. Nothing can live
+    # under /dev/null, so the check in `parse_args' is decisive.
+    __DIR__=/dev/null/nonexistent
+  fi
 }
 
 parse_args() {
