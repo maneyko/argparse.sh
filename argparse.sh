@@ -310,6 +310,20 @@ parse_args() {
   get__dir__
   __FILE__=$__DIR__/${0##*/}
 
+  # `$0' is resolved against the current directory, so changing it before this
+  # point makes `$__DIR__' silently wrong. A `-c' or stdin script has no file
+  # to find in the first place -- there `$0' is just "bash".
+  case $- in
+    *c*|*s*) ;;
+    *)
+      if [[ ! -f $__FILE__ ]]; then
+        echo "ERROR: cannot locate the script at '$__FILE__'." >&2
+        echo 'Source argparse.sh and call parse_args before changing directories.' >&2
+        exit 1
+      fi
+      ;;
+  esac
+
   if [[ -n $nounset ]]; then
     set -u
   fi
@@ -496,8 +510,6 @@ argparse.sh::parse_args() {
   done
 
   unset ${!_ARG_*} ${!_found_*}
-
-  set -- "${POSITIONAL[@]}"
 }
 
 print_help() {
