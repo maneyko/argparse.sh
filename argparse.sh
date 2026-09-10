@@ -373,6 +373,11 @@ parse_args() {
 
 # @param args_arr
 argparse.sh::parse_args() {
+  # Each `arg_*' call appended one alternative plus a trailing "|", leaving
+  # something like "(verbose)|(quiet)|(help)|". Drop that trailing "|", and
+  # where nothing was registered substitute a pattern that cannot match, so
+  # the branch below is simply never taken -- an empty regex would match
+  # everything instead.
   long_flag_regex=${long_flag_regex%|}
   : ${long_flag_regex:=($impossible_match_pat)}
   short_flag_regex=${short_flag_regex%|}
@@ -386,104 +391,155 @@ argparse.sh::parse_args() {
   short_arr_regex=${short_arr_regex%|}
   : ${short_arr_regex:=($impossible_match_pat)}
 
-  local opt_name opt_flag name_var value key i name_upper found_name pos_val
-  local bundled_args bundled_name bundled_flag
-  local match_o match_a match_o_n match_a_n opt_flag_o opt_flag_a opt_name_o opt_name_a
+  # $name_var and $found_var hold the *names* of variables, read back with
+  # ${!name_var}. $name_upper is set by `get_name_upper' rather than returned.
+  local opt_name opt_flag name_var value key i name_upper found_var pos_val
 
+  # Bundled short flags, e.g. the "fr/^\d+/" left over from `-cfr/^\d+/'.
+  local bundle value_name value_flag
+  local optional_value optional_value_len optional_flag optional_name
+  local array_value array_value_len array_flag array_name
+
+  # The branches are ordered boolean, optional, then array, long form before
+  # short. The short-boolean branch is the only one that has to deal with
+  # bundling, because it is the only one that can be followed by more flags.
   while [[ $# -gt 0 ]]; do
     key=$1
     value=
     shift
 
     if [[ $key =~ ^--($long_flag_regex)$ ]]; then
+      # `--verbose'. Anchored at both ends: a boolean takes no value, so
+      # `--verbose=false' does not match here and ends up in $POSITIONAL.
       get_name_upper ${BASH_REMATCH[1]}
       export -n ARG_$name_upper=true
 
     elif [[ $key =~ ^-($short_flag_regex) ]]; then
-      opt_flag=${BASH_REMATCH[1]}
-      name_var=_ARG_${opt_flag}_NAME
-      get_name_upper ${!name_var}
+      # A short boolean flag, with anything bundled behind it still attached:
+      # `-v', `-vq', `-vd,' and `-cfr/^\d+/' all arrive here.
+      opt_flag=${BASH_REMATCH[1]}          # "c"
+      name_var=_ARG_${opt_flag}_NAME       # "_ARG_c_NAME", which holds "checks"
+      get_name_upper ${!name_var}          # name_upper="CHECKS"
       export -n ARG_$name_upper=true
 
-      bundled_args=${key#-$opt_flag}
-      [[ -z $bundled_args ]] && continue
+      bundle=${key#-$opt_flag}             # `-cfr/^\d+/' leaves bundle="fr/^\d+/"
+      [[ -z $bundle ]] && continue
 
       # <Bundled arguments>
+      #
+      # What is left may hold more booleans and at most one flag that takes a
+      # value. That flag swallows the whole remainder of the bundle, so which
+      # flag it is has to be settled before anything can be assigned. Walking
+      # through bundle="fr/^\d+/", where c and f are booleans and r is an
+      # `arg_optional':
+      #
+      #   optional match   flag="r"  value="/^\d+/"  len=6
+      #   array match      no array flag present     len=-1
+      #   winner           the optional, so ARG_PERL_REGEX_PATTERN="/^\d+/"
+      #   bundle rewritten "f", the booleans sitting in front of r
+      #
+      # Position is read off the length of the text trailing each candidate
+      # rather than an index: the flag with more characters behind it is the
+      # one that appeared earlier, and the earlier flag owns the value. A
+      # length of -1 means no flag of that kind is in the bundle at all.
 
-      match_o_n=-1
-      match_a_n=-1
+      optional_value_len=-1
+      array_value_len=-1
 
-      if [[ $bundled_args =~ ($short_opt_regex)(.*) ]]; then
-        match_o=${BASH_REMATCH[@]: -1}
-        match_o_n=${#match_o}
-        opt_flag_o=${BASH_REMATCH[1]}
-        name_var=_ARG_${opt_flag_o}_NAME
-        opt_name_o=${!name_var}
+      # The pattern ends in `(.*)', so the last capture group is the text
+      # following the matched flag: for "fr/^\d+/" that is "/^\d+/".
+      if [[ $bundle =~ ($short_opt_regex)(.*) ]]; then
+        optional_value=${BASH_REMATCH[@]: -1}
+        optional_value_len=${#optional_value}
+        optional_flag=${BASH_REMATCH[1]}
+        name_var=_ARG_${optional_flag}_NAME
+        optional_name=${!name_var}         # e.g. "perl-regex-pattern"
       fi
 
-      if [[ $bundled_args =~ ($short_arr_regex)(.*) ]]; then
-        match_a=${BASH_REMATCH[@]: -1}
-        match_a_n=${#match_a}
-        opt_flag_a=${BASH_REMATCH[1]}
-        name_var=_ARG_${opt_flag_a}_NAME
-        opt_name_a=${!name_var}
+      if [[ $bundle =~ ($short_arr_regex)(.*) ]]; then
+        array_value=${BASH_REMATCH[@]: -1}
+        array_value_len=${#array_value}
+        array_flag=${BASH_REMATCH[1]}
+        name_var=_ARG_${array_flag}_NAME
+        array_name=${!name_var}            # e.g. "numbers"
       fi
 
-      if [[ $match_o_n -gt -1 || $match_a_n -gt -1 ]]; then
-        if [[ $match_o_n -ge $match_a_n ]]; then
-          bundled_name=$opt_name_o
-          bundled_flag=$opt_flag_o
-          value=$match_o
+      if [[ $optional_value_len -gt -1 || $array_value_len -gt -1 ]]; then
+        # Longer trailing text wins, so an equal length hands it to the
+        # optional. Both being -1 is excluded above, so whichever branch is
+        # taken describes a flag that really matched.
+        if [[ $optional_value_len -ge $array_value_len ]]; then
+          value_name=$optional_name
+          value_flag=$optional_flag
+          value=$optional_value
         else
-          bundled_name=$opt_name_a
-          bundled_flag=$opt_flag_a
-          value=$match_a
+          value_name=$array_name
+          value_flag=$array_flag
+          value=$array_value
         fi
-        get_name_upper $bundled_name
+        get_name_upper $value_name
+
+        # Nothing followed the flag, as in `-vp 8080': take the next argument.
         if [[ -z $value ]]; then
           value=$1
           shift
         fi
-        bundled_args=${bundled_args%%$bundled_flag*}
 
-        if [[ $match_a_n -gt $match_o_n ]]; then
-          found_name=_found_$name_upper
+        # Everything from the value flag rightwards has been consumed as the
+        # value, so what stands in front of it is booleans: "fr/^\d+/" -> "f".
+        bundle=${bundle%%$value_flag*}
 
-          if [[ -z ${!found_name} ]]; then
+        if [[ $array_value_len -gt $optional_value_len ]]; then
+          # An `arg_array' flag appends, except on its first appearance, where
+          # it has to discard whatever default the script assigned to
+          # ARG_<NAME>. This marker is what separates those two cases.
+          found_var=_found_$name_upper
+
+          if [[ -z ${!found_var} ]]; then
             unset ARG_$name_upper
-            export -n $found_name=true
+            export -n $found_var=true
           fi
+          # The array's name is only known at runtime. Expansion happens after
+          # this line is parsed, so a value holding `;' or `$(...)' stays data.
           eval "ARG_$name_upper[\${#ARG_$name_upper[@]}]=\$value"
         else
           export -n ARG_$name_upper="$value"
         fi
       fi
 
-      while [[ $bundled_args =~ ($short_flag_regex) ]]; do
+      # Whatever survives is booleans in any order: "f" above, or "qv" from
+      # `-cqvp8080'. Each match is deleted, which is what ends the loop.
+      while [[ $bundle =~ ($short_flag_regex) ]]; do
         opt_flag=${BASH_REMATCH[1]}
         name_var=_ARG_${opt_flag}_NAME
         get_name_upper ${!name_var}
         export -n ARG_$name_upper=true
-        bundled_args=${bundled_args//$opt_flag}
+        bundle=${bundle//$opt_flag}
       done
       # </Bundled arguments>
 
     elif [[ $key =~ ^--($long_opt_regex) ]]; then
-      opt_name=${BASH_REMATCH[1]}
-      get_name_upper $opt_name
+      # `--port 8080' or `--port=8080'.
+      opt_name=${BASH_REMATCH[1]}          # "port"
+      get_name_upper $opt_name             # name_upper="PORT"
 
       if [[ $key == --$opt_name ]]; then
-        value=$1
+        value=$1                           # the value is the next argument
         shift
       elif [[ $key == --$opt_name=* ]]; then
-        value=${key#*=}
+        value=${key#*=}                    # `--port=8080' -> "8080"
       else
+        # The regex is unanchored at the end, so `--portfolio' gets in here on
+        # the strength of its "port" prefix and is then dropped -- it does not
+        # reach $POSITIONAL the way an unrecognised `--zzz' would.
         continue
       fi
 
       export -n ARG_$name_upper="$value"
 
     elif [[ $key =~ ^-($short_opt_regex) ]]; then
+      # `-p 8080' or `-p8080'. Bundles were handled by the boolean branch
+      # above, so anything attached here is the value.
       opt_flag=${BASH_REMATCH[1]}
       name_var=_ARG_${opt_flag}_NAME
       get_name_upper ${!name_var}
@@ -492,11 +548,12 @@ argparse.sh::parse_args() {
         value=$1
         shift
       else
-        value=${key#-$opt_flag}
+        value=${key#-$opt_flag}            # `-p8080' -> "8080"
       fi
       export -n ARG_$name_upper="$value"
 
     elif [[ $key =~ ^--($long_arr_regex) ]]; then
+      # `--numbers 12' or `--numbers=12', repeatable.
       opt_name=${BASH_REMATCH[1]}
       if [[ $key == --$opt_name ]]; then
         value=$1
@@ -508,15 +565,18 @@ argparse.sh::parse_args() {
       fi
       get_name_upper $opt_name
 
-      found_name=_found_$name_upper
+      # See the bundled branch above: the first occurrence replaces the
+      # script's default, the rest append.
+      found_var=_found_$name_upper
 
-      if [[ -z ${!found_name} ]]; then
+      if [[ -z ${!found_var} ]]; then
         unset ARG_$name_upper
-        export -n $found_name=true
+        export -n $found_var=true
       fi
       eval "ARG_$name_upper[\${#ARG_$name_upper[@]}]=\$value"
 
     elif [[ $key =~ ^-($short_arr_regex) ]]; then
+      # `-n 12' or `-n12', repeatable.
       opt_flag=${BASH_REMATCH[1]}
       name_var=_ARG_${opt_flag}_NAME
       get_name_upper ${!name_var}
@@ -528,14 +588,17 @@ argparse.sh::parse_args() {
         value=${key#-$opt_flag}
       fi
 
-      found_name=_found_$name_upper
+      found_var=_found_$name_upper
 
-      if [[ -z ${!found_name} ]]; then
+      if [[ -z ${!found_var} ]]; then
         unset ARG_$name_upper
-        export -n $found_name=true
+        export -n $found_var=true
       fi
       eval "ARG_$name_upper[\${#ARG_$name_upper[@]}]=\$value"
     else
+      # Not a flag this script registered. Positionals land here, and so do
+      # flags meant for a command this script wraps -- several callers slice
+      # their own positionals off the front and forward the rest verbatim.
       POSITIONAL[${#POSITIONAL[@]}]=$key
     fi
   done
@@ -545,6 +608,9 @@ argparse.sh::parse_args() {
     exit 0
   fi
 
+  # Positional values are named by the order `arg_positional' was called in,
+  # so the first value becomes $ARG_<first registered name>. Extra values stay
+  # in $POSITIONAL and are not given a name.
   i=0; for pos_val in "${POSITIONAL[@]}"; do
     get_name_upper ${POSITIONAL_NAMES[$i]}
     export -n ARG_$name_upper="$pos_val"
@@ -562,21 +628,27 @@ print_help() {
     set +u
   fi
 
+  # These are all wider than $HELP_WIDTH on purpose. The colored fields are
+  # padded with `%-Nb', and that width counts the literal "\033[38;5;3m" and
+  # "\033[0m" wrapping each one -- 19 characters that `%b' then turns into
+  # zero visible width. The margins are tuned against real output rather than
+  # derived, so adjusting one means looking at the printed help, not at the
+  # arithmetic.
   : ${HELP_WIDTH:=30}
-  local X_POS=$(($HELP_WIDTH + 10))
-  local X_OPT=$(($HELP_WIDTH + 23))
-  local X_OPT_NL=$(($HELP_WIDTH - 3))
-  local opt_flag opt_name flag_disp printf_s var i j p_name pos_name bool_name bool_flag
+  local pos_column=$(($HELP_WIDTH + 10))   # description column, positional block
+  local flag_column=$(($HELP_WIDTH + 23))  # description column, optional block
+  local wrap_column=$(($HELP_WIDTH - 3))   # indent for a description's later lines
+  local opt_flag opt_name flag_disp out line i first_done p_name pos_name bool_name bool_flag
   bprint 'usage:'
-  printf_s="  ${0##*/} "
+  out="  ${0##*/} "
   for p_name in "${POSITIONAL_NAMES[@]}"; do
-    printf_s+="[$p_name] "
+    out+="[$p_name] "
   done
   i=0; for bool_name in "${BOOLEAN_NAMES[@]}"; do
     if [[ -n $bool_name ]]; then
-      printf_s+="[--$bool_name] "
+      out+="[--$bool_name] "
     else
-      printf_s+="[-${BOOLEAN_FLAGS[$i]}] "
+      out+="[-${BOOLEAN_FLAGS[$i]}] "
     fi
     : $((i++))
   done
@@ -584,9 +656,9 @@ print_help() {
     : ${opt_name:=STRING}
     opt_flag=${OPTIONAL_FLAGS[$i]}
     if [[ -n $opt_flag ]]; then
-      printf_s+="[-$opt_flag $opt_name] "
+      out+="[-$opt_flag $opt_name] "
     else
-      printf_s+="[--$opt_name=STRING] "
+      out+="[--$opt_name=STRING] "
     fi
     : $((i++))
   done
@@ -594,9 +666,9 @@ print_help() {
     opt_name="${ARRAY_NAMES[$i]}"
     : ${opt_name:=STRING}
     if [[ -n $opt_flag ]]; then
-      printf_s+="[-$opt_flag $opt_name -$opt_flag ...] "
+      out+="[-$opt_flag $opt_name -$opt_flag ...] "
     else
-      printf_s+="[--$opt_name=ARG1 --$opt_name=ARG2 ...] "
+      out+="[--$opt_name=ARG1 --$opt_name=ARG2 ...] "
     fi
     : $((i++))
   done
@@ -609,26 +681,29 @@ print_help() {
   else
     unset has_any_optional_flags
   fi
-  printf -- "%s\n%b\n" "$printf_s" "$HELP_DESCRIPTION"
-  printf_s=
-  [[ -n $has_any_optional_flags || ${#POSITIONAL_NAMES[@]} -gt 0 ]] && printf_s+=$'\n'
-  [[ ${#POSITIONAL_NAMES[@]} -gt 0 ]]                               && printf_s+=$'positional arguments:\n'
+  printf -- "%s\n%b\n" "$out" "$HELP_DESCRIPTION"
+  out=
+  [[ -n $has_any_optional_flags || ${#POSITIONAL_NAMES[@]} -gt 0 ]] && out+=$'\n'
+  [[ ${#POSITIONAL_NAMES[@]} -gt 0 ]]                               && out+=$'positional arguments:\n'
+  # A description may span several lines. The first one is printed beside the
+  # argument's name; the rest are indented under it. The three blocks below --
+  # positional, boolean and optional, then array -- all repeat this shape.
   i=0; for pos_name in "${POSITIONAL_NAMES[@]}"; do
     cprint_q 3 "$pos_name"
-    j=
+    first_done=
     while read -r; do
-      if [[ -z $j ]]; then
-        j=1
-        printf -v var -- "  %-${X_POS}b %s\n" "${cprint_string}" "$REPLY"
+      if [[ -z $first_done ]]; then
+        first_done=1
+        printf -v line -- "  %-${pos_column}b %s\n" "${cprint_string}" "$REPLY"
       else
-        printf -v var -- "  %-${X_OPT_NL}s %s\n" ' ' "$REPLY"
+        printf -v line -- "  %-${wrap_column}s %s\n" ' ' "$REPLY"
       fi
-      printf_s+=$var
+      out+=$line
     done <<< "${POSITIONAL_DESCRIPTIONS[$i]}"
     : $((i++))
   done
-  [[ ${#POSITIONAL_NAMES[@]} -gt 0 ]] && printf_s+=$'\n'
-  [[ -n $has_any_optional_flags ]]    && printf_s+=$'optional arguments:\n'
+  [[ ${#POSITIONAL_NAMES[@]} -gt 0 ]] && out+=$'\n'
+  [[ -n $has_any_optional_flags ]]    && out+=$'optional arguments:\n'
   i=0; for bool_name in "${BOOLEAN_NAMES[@]}"; do
     bool_flag=${BOOLEAN_FLAGS[$i]}
     if [[ -n $bool_flag ]]; then
@@ -646,15 +721,15 @@ print_help() {
     if [[ -n $bool_flag && -n $bool_name ]]; then
       flag_disp=$flag_disp,
     fi
-    j=
+    first_done=
     while read -r; do
-      if [[ -z $j ]]; then
-        j=1
-        printf -v var -- "  %-${X_OPT}b %s\n" "$flag_disp $cprint_string" "$REPLY"
+      if [[ -z $first_done ]]; then
+        first_done=1
+        printf -v line -- "  %-${flag_column}b %s\n" "$flag_disp $cprint_string" "$REPLY"
       else
-        printf -v var -- "  %-${X_OPT_NL}s %s\n" ' ' "$REPLY"
+        printf -v line -- "  %-${wrap_column}s %s\n" ' ' "$REPLY"
       fi
-      printf_s+=$var
+      out+=$line
     done <<< "${BOOLEAN_DESCRIPTIONS[$i]}"
     : $((i++))
   done
@@ -676,15 +751,15 @@ print_help() {
     if [[ -n $opt_flag && -n $opt_name ]]; then
       flag_disp="$flag_disp,"
     fi
-    j=
+    first_done=
     while read -r; do
-      if [[ -z $j ]]; then
-        j=1
-        printf -v var -- "  %-${X_OPT}b %s\n" "$flag_disp $cprint_string" "$REPLY"
+      if [[ -z $first_done ]]; then
+        first_done=1
+        printf -v line -- "  %-${flag_column}b %s\n" "$flag_disp $cprint_string" "$REPLY"
       else
-        printf -v var -- "  %-${X_OPT_NL}s %s\n" ' ' "$REPLY"
+        printf -v line -- "  %-${wrap_column}s %s\n" ' ' "$REPLY"
       fi
-      printf_s+=$var
+      out+=$line
     done <<< "${OPTIONAL_DESCRIPTIONS[$i]}"
     : $((i++))
   done
@@ -705,19 +780,19 @@ print_help() {
     if [[ -n $opt_flag && -n $opt_name ]]; then
       flag_disp=$flag_disp,
     fi
-    j=
+    first_done=
     while read -r; do
-      if [[ -z $j ]]; then
-        j=1
-        printf -v var -- "  %-${X_OPT}b %s\n" "$flag_disp $cprint_string" "$REPLY"
+      if [[ -z $first_done ]]; then
+        first_done=1
+        printf -v line -- "  %-${flag_column}b %s\n" "$flag_disp $cprint_string" "$REPLY"
       else
-        printf -v var -- "  %-${X_OPT_NL}s %s\n" ' ' "$REPLY"
+        printf -v line -- "  %-${wrap_column}s %s\n" ' ' "$REPLY"
       fi
-      printf_s+=$var
+      out+=$line
     done <<< "${ARRAY_DESCRIPTIONS[$i]}"
     : $((i++))
   done
-  printf -- '%s' "$printf_s"
+  printf -- '%s' "$out"
 
   if [[ -n $nounset ]]; then
     set -u
