@@ -178,24 +178,33 @@ arg_positional() {
   fi
 }
 
+# Sets $opt_name, $opt_flag and $opt_desc in the caller from a bracket spec,
+# or returns non-zero if the spec does not parse.
+#
+# Matches all arguments joined rather than "$1": a description interpolating
+# "${arr[@]}" arrives here as several words.
+argparse.sh::split_spec() {
+  [[ "$@" =~ $three_arg_pat ]] || return 1
+  opt_name=${BASH_REMATCH[1]}
+  opt_flag=${BASH_REMATCH[3]}
+  opt_desc=${BASH_REMATCH[6]}
+}
+
 # @param arg_name
 # @param arg_flag
 # @param arg_description
 long_flag_regex=
 short_flag_regex=
 arg_boolean() {
-  local opt_name opt_flag
-  if [[ "$@" =~ $three_arg_pat ]]; then
-    opt_name=${BASH_REMATCH[1]}
-    opt_flag=${BASH_REMATCH[3]}
-    BOOLEAN_NAMES[${#BOOLEAN_NAMES[@]}]=$opt_name
-    BOOLEAN_FLAGS[${#BOOLEAN_FLAGS[@]}]=$opt_flag
-    BOOLEAN_DESCRIPTIONS[${#BOOLEAN_DESCRIPTIONS[@]}]=${BASH_REMATCH[6]}
+  local opt_name opt_flag opt_desc
+  argparse.sh::split_spec "$@" || return 0
+  BOOLEAN_NAMES[${#BOOLEAN_NAMES[@]}]=$opt_name
+  BOOLEAN_FLAGS[${#BOOLEAN_FLAGS[@]}]=$opt_flag
+  BOOLEAN_DESCRIPTIONS[${#BOOLEAN_DESCRIPTIONS[@]}]=$opt_desc
 
-    export -n _ARG_${opt_flag:-${opt_name//-/_}}_NAME=${opt_name:-$opt_flag}
-    long_flag_regex+="(${opt_name:-$impossible_match_pat})|"
-    short_flag_regex+="(${opt_flag:-$impossible_match_pat})|"
-  fi
+  export -n _ARG_${opt_flag:-${opt_name//-/_}}_NAME=${opt_name:-$opt_flag}
+  long_flag_regex+="(${opt_name:-$impossible_match_pat})|"
+  short_flag_regex+="(${opt_flag:-$impossible_match_pat})|"
 }
 
 # @param arg_name
@@ -204,18 +213,15 @@ arg_boolean() {
 long_opt_regex=
 short_opt_regex=
 arg_optional() {
-  local opt_name opt_flag
-  if [[ "$@" =~ $three_arg_pat ]]; then
-    opt_name=${BASH_REMATCH[1]}
-    opt_flag=${BASH_REMATCH[3]}
-    OPTIONAL_NAMES[${#OPTIONAL_NAMES[@]}]=$opt_name
-    OPTIONAL_FLAGS[${#OPTIONAL_FLAGS[@]}]=$opt_flag
-    OPTIONAL_DESCRIPTIONS[${#OPTIONAL_DESCRIPTIONS[@]}]=${BASH_REMATCH[6]}
+  local opt_name opt_flag opt_desc
+  argparse.sh::split_spec "$@" || return 0
+  OPTIONAL_NAMES[${#OPTIONAL_NAMES[@]}]=$opt_name
+  OPTIONAL_FLAGS[${#OPTIONAL_FLAGS[@]}]=$opt_flag
+  OPTIONAL_DESCRIPTIONS[${#OPTIONAL_DESCRIPTIONS[@]}]=$opt_desc
 
-    export -n _ARG_${opt_flag:-${opt_name//-/_}}_NAME=${opt_name:-$opt_flag}
-    long_opt_regex+="(${opt_name:-$impossible_match_pat})|"
-    short_opt_regex+="(${opt_flag:-$impossible_match_pat})|"
-  fi
+  export -n _ARG_${opt_flag:-${opt_name//-/_}}_NAME=${opt_name:-$opt_flag}
+  long_opt_regex+="(${opt_name:-$impossible_match_pat})|"
+  short_opt_regex+="(${opt_flag:-$impossible_match_pat})|"
 }
 
 # @param arg_name
@@ -224,18 +230,15 @@ arg_optional() {
 long_arr_regex=
 short_arr_regex=
 arg_array() {
-  local opt_name opt_flag
-  if [[ "$@" =~ $three_arg_pat ]]; then
-    opt_name=${BASH_REMATCH[1]}
-    opt_flag=${BASH_REMATCH[3]}
-    ARRAY_NAMES[${#ARRAY_NAMES[@]}]=$opt_name
-    ARRAY_FLAGS[${#ARRAY_FLAGS[@]}]=$opt_flag
-    ARRAY_DESCRIPTIONS[${#ARRAY_DESCRIPTIONS[@]}]=${BASH_REMATCH[6]}
+  local opt_name opt_flag opt_desc
+  argparse.sh::split_spec "$@" || return 0
+  ARRAY_NAMES[${#ARRAY_NAMES[@]}]=$opt_name
+  ARRAY_FLAGS[${#ARRAY_FLAGS[@]}]=$opt_flag
+  ARRAY_DESCRIPTIONS[${#ARRAY_DESCRIPTIONS[@]}]=$opt_desc
 
-    export -n _ARG_${opt_flag:-${opt_name//-/_}}_NAME=${opt_name:-$opt_flag}
-    long_arr_regex+="(${opt_name:-$impossible_match_pat})|"
-    short_arr_regex+="(${opt_flag:-$impossible_match_pat})|"
-  fi
+  export -n _ARG_${opt_flag:-${opt_name//-/_}}_NAME=${opt_name:-$opt_flag}
+  long_arr_regex+="(${opt_name:-$impossible_match_pat})|"
+  short_arr_regex+="(${opt_flag:-$impossible_match_pat})|"
 }
 
 # @param arg_description
