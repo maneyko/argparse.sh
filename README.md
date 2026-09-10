@@ -104,8 +104,23 @@ as is done in [Usage](#usage).
 
 ## API Documentation
 
-All parameters passed to any function in `argparse.sh` must be surrounded by square brackets,
-as done in [Usage](#usage).
+Each function takes its fields either inside square brackets in a single argument, as done in
+[Usage](#usage), or as separate arguments. These two lines are equivalent:
+
+```bash
+arg_optional "[port] [p] [The port to use]"
+arg_optional port p "The port to use"
+```
+
+Pass an empty string for a field you are leaving out:
+
+```bash
+arg_boolean  ""         f    "A flag with no long name"
+arg_optional percentage ""   "Percent of file to process"
+```
+
+Both spellings may be mixed within one script. The bracket form is used throughout this
+document and is not going away.
 
 Functions for parsing arguments:
 

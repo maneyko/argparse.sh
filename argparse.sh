@@ -51,6 +51,17 @@
 #     awk -F "$ARG_DELIMITER" "{print $ARG_EXPRESSION}" "$ARG_INPUT_FILE"
 #
 #
+# Each registration function accepts its fields either inside square brackets in
+# one argument, or as separate arguments. These two lines are equivalent:
+#
+#     arg_optional "[port] [p] [The port to use]"
+#     arg_optional port p "The port to use"
+#
+# Pass an empty string for a field you are leaving out, as in
+# `arg_optional percentage "" "Percent of file to process"'. The bracket form is
+# used throughout the examples below and is not going away.
+#
+#
 # The functions the programmer can use when sourcing this file in their script are:
 #
 # * arg_positional
@@ -172,18 +183,37 @@ three_arg_pat="\[${arg_name_pat}?\]?${optional_space_pat}\[?${arg_flag_pat}?\]${
 # @param arg_name
 # @param arg_description
 arg_positional() {
-  if [[ "$@" =~ $arg_positional_pat ]]; then
-    POSITIONAL_NAMES[${#POSITIONAL_NAMES[@]}]=${BASH_REMATCH[1]}
-    POSITIONAL_DESCRIPTIONS[${#POSITIONAL_DESCRIPTIONS[@]}]=${BASH_REMATCH[4]}
+  local pos_name pos_desc
+  if [[ $# -gt 1 && $1 != *\[* ]]; then
+    pos_name=$1
+    pos_desc=$2
+  elif [[ "$@" =~ $arg_positional_pat ]]; then
+    pos_name=${BASH_REMATCH[1]}
+    pos_desc=${BASH_REMATCH[4]}
+  else
+    return 0
   fi
+  POSITIONAL_NAMES[${#POSITIONAL_NAMES[@]}]=$pos_name
+  POSITIONAL_DESCRIPTIONS[${#POSITIONAL_DESCRIPTIONS[@]}]=$pos_desc
 }
 
-# Sets $opt_name, $opt_flag and $opt_desc in the caller from a bracket spec,
-# or returns non-zero if the spec does not parse.
+# Sets $opt_name, $opt_flag and $opt_desc in the caller from either form,
+# or returns non-zero if the spec does not parse:
 #
-# Matches all arguments joined rather than "$1": a description interpolating
-# "${arr[@]}" arrives here as several words.
+#     arg_boolean "[verbose] [v] [Do verbose output]"
+#     arg_boolean verbose v "Do verbose output"
+#
+# A bracket spec may be padded for alignment, so a leading `[' cannot be the
+# test; the absence of any `[' in the first argument is. The bracket branch
+# matches all arguments joined rather than "$1" because a description
+# interpolating "${arr[@]}" arrives here as several words.
 argparse.sh::split_spec() {
+  if [[ $# -gt 1 && $1 != *\[* ]]; then
+    opt_name=$1
+    opt_flag=$2
+    opt_desc=${3:-}
+    return 0
+  fi
   [[ "$@" =~ $three_arg_pat ]] || return 1
   opt_name=${BASH_REMATCH[1]}
   opt_flag=${BASH_REMATCH[3]}

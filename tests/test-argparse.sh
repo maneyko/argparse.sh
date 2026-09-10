@@ -177,6 +177,78 @@ contains '-h prints a usage line'                       "$OUT" 'usage:'
 contains '-h lists a registered long flag'              "$OUT" '--verbose'
 contains '-h lists the auto-added help flag'            "$OUT" '--help'
 
+cat > "$FIXTURES/barewords.sh" <<'FIXTURE'
+#!/bin/bash
+set -u
+source "$ARGPARSE_SH"
+ARG_NUMBERS=(9 9)
+arg_positional infile  "Input file"
+arg_positional outfile "Output file"
+arg_boolean    verbose v "Verbose"
+arg_boolean    ""      f "No long name"
+arg_optional   port    p "Port"
+arg_optional   percent "" "No short flag"
+arg_array      numbers n "Numbers"
+arg_boolean    terse   t
+arg_help       "[Fields as separate arguments]"
+parse_args
+printf 'INFILE=[%s] OUTFILE=[%s]\n' "${ARG_INFILE:-}" "${ARG_OUTFILE:-}"
+printf 'VERBOSE=[%s] F=[%s] TERSE=[%s]\n' "${ARG_VERBOSE:-}" "${ARG_F:-}" "${ARG_TERSE:-}"
+printf 'PORT=[%s] PERCENT=[%s] NUMBERS=[%s]\n' "${ARG_PORT:-}" "${ARG_PERCENT:-}" "${ARG_NUMBERS[*]}"
+FIXTURE
+
+run barewords in.txt out.txt
+line_is 'bare words: positionals register in order'   "$OUT" 'INFILE=[in.txt] OUTFILE=[out.txt]'
+line_is 'bare words: array default is kept'          "$OUT" 'PORT=[] PERCENT=[] NUMBERS=[9 9]'
+
+run barewords -vft in.txt
+line_is 'bare words: long and flag-only booleans'    "$OUT" 'VERBOSE=[true] F=[true] TERSE=[true]'
+run barewords --verbose
+line_is 'bare words: long form of a boolean'         "$OUT" 'VERBOSE=[true] F=[] TERSE=[]'
+run barewords -p8080 --percent=75% -n1 -n2
+line_is 'bare words: optionals and arrays parse'     "$OUT" 'PORT=[8080] PERCENT=[75%] NUMBERS=[1 2]'
+
+run barewords -h
+equals  'bare words: -h exits 0'                     "$RC" '0'
+contains 'bare words: description reaches the help'  "$OUT" 'No short flag'
+contains 'bare words: a two-argument spec is allowed' "$OUT" '--terse'
+
+cat > "$FIXTURES/mixed.sh" <<'FIXTURE'
+#!/bin/bash
+source "$ARGPARSE_SH"
+arg_positional "[infile] [Input file]"
+arg_boolean    verbose v "Verbose"
+arg_optional   "[port]   [p] [Port]"
+arg_array      numbers n "Numbers"
+arg_help       "[Both spellings in one script]"
+parse_args
+printf 'INFILE=[%s] VERBOSE=[%s] PORT=[%s] NUMBERS=[%s]\n' \
+  "$ARG_INFILE" "$ARG_VERBOSE" "$ARG_PORT" "${ARG_NUMBERS[*]}"
+FIXTURE
+
+run mixed in.txt -v -p 80 -n5
+line_is 'both spellings work in one script'          "$OUT" 'INFILE=[in.txt] VERBOSE=[true] PORT=[80] NUMBERS=[5]'
+
+# A bracket spec is still a bracket spec when it arrives as several arguments,
+# which is what "${arr[@]}" inside the description does.
+cat > "$FIXTURES/splitspec.sh" <<'FIXTURE'
+#!/bin/bash
+source "$ARGPARSE_SH"
+ARG_NUMBERS=(1 2 3)
+arg_array      "[numbers] [n] [Numbers to add. Default is: [${ARG_NUMBERS[@]}]]"
+arg_optional   '   [p] [Padded so it does not start with a bracket]'
+arg_positional "[infile] [In]"
+arg_help       "[Bracket specs that are not one argument]"
+parse_args
+printf 'NUMBERS=[%s] P=[%s] INFILE=[%s]\n' "${ARG_NUMBERS[*]}" "$ARG_P" "$ARG_INFILE"
+FIXTURE
+
+run splitspec in.txt -n7 -p80
+line_is 'a bracket spec split by an array still parses' "$OUT" 'NUMBERS=[7] P=[80] INFILE=[in.txt]'
+run splitspec -h
+contains 'a split bracket spec keeps its description' "$OUT" 'Numbers to add. Default is: [1 2 3]'
+contains 'a padded bracket spec keeps its description' "$OUT" 'Padded so it does not start with a bracket'
+
 cat > "$FIXTURES/passthrough.sh" <<'FIXTURE'
 #!/bin/bash
 source "$ARGPARSE_SH"
