@@ -395,7 +395,7 @@ argparse.sh::parse_args() {
   # ${!name_var}. $name_upper is set by `get_name_upper' rather than returned.
   local opt_name opt_flag name_var value key i name_upper found_var pos_val
 
-  # Bundled short flags, e.g. the "fr/^\d+/" left over from `-cfr/^\d+/'.
+  # Bundled short flags, e.g. the "qp8080" left over from `-vqp8080'.
   local bundle value_name value_flag
   local optional_value optional_value_len optional_flag optional_name
   local array_value array_value_len array_flag array_name
@@ -416,13 +416,13 @@ argparse.sh::parse_args() {
 
     elif [[ $key =~ ^-($short_flag_regex) ]]; then
       # A short boolean flag, with anything bundled behind it still attached:
-      # `-v', `-vq', `-vd,' and `-cfr/^\d+/' all arrive here.
-      opt_flag=${BASH_REMATCH[1]}          # "c"
-      name_var=_ARG_${opt_flag}_NAME       # "_ARG_c_NAME", which holds "checks"
-      get_name_upper ${!name_var}          # name_upper="CHECKS"
+      # `-v', `-vq', `-vp8080' and `-vqp8080' all arrive here.
+      opt_flag=${BASH_REMATCH[1]}          # "v"
+      name_var=_ARG_${opt_flag}_NAME       # "_ARG_v_NAME", which holds "verbose"
+      get_name_upper ${!name_var}          # name_upper="VERBOSE"
       export -n ARG_$name_upper=true
 
-      bundle=${key#-$opt_flag}             # `-cfr/^\d+/' leaves bundle="fr/^\d+/"
+      bundle=${key#-$opt_flag}             # `-vqp8080' leaves bundle="qp8080"
       [[ -z $bundle ]] && continue
 
       # <Bundled arguments>
@@ -430,30 +430,32 @@ argparse.sh::parse_args() {
       # What is left may hold more booleans and at most one flag that takes a
       # value. That flag swallows the whole remainder of the bundle, so which
       # flag it is has to be settled before anything can be assigned. Walking
-      # through bundle="fr/^\d+/", where c and f are booleans and r is an
+      # through bundle="qp8080", where q is a boolean and p is an
       # `arg_optional':
       #
-      #   optional match   flag="r"  value="/^\d+/"  len=6
-      #   array match      no array flag present     len=-1
-      #   winner           the optional, so ARG_PERL_REGEX_PATTERN="/^\d+/"
-      #   bundle rewritten "f", the booleans sitting in front of r
+      #   optional match   flag="p"  value="8080"  len=4
+      #   array match      no array flag present   len=-1
+      #   winner           the optional, so ARG_PORT="8080"
+      #   bundle rewritten "q", the boolean sitting in front of p
       #
       # Position is read off the length of the text trailing each candidate
       # rather than an index: the flag with more characters behind it is the
-      # one that appeared earlier, and the earlier flag owns the value. A
-      # length of -1 means no flag of that kind is in the bundle at all.
+      # one that appeared earlier, and the earlier flag owns the value. With
+      # an `arg_array' -n in play, that is what makes `-vpn5' set ARG_PORT to
+      # "n5" while `-vnp5' appends "p5" to ARG_NUMBERS. A length of -1 means
+      # no flag of that kind is in the bundle at all.
 
       optional_value_len=-1
       array_value_len=-1
 
       # The pattern ends in `(.*)', so the last capture group is the text
-      # following the matched flag: for "fr/^\d+/" that is "/^\d+/".
+      # following the matched flag: for "qp8080" that is "8080".
       if [[ $bundle =~ ($short_opt_regex)(.*) ]]; then
         optional_value=${BASH_REMATCH[@]: -1}
         optional_value_len=${#optional_value}
         optional_flag=${BASH_REMATCH[1]}
         name_var=_ARG_${optional_flag}_NAME
-        optional_name=${!name_var}         # e.g. "perl-regex-pattern"
+        optional_name=${!name_var}         # e.g. "port"
       fi
 
       if [[ $bundle =~ ($short_arr_regex)(.*) ]]; then
@@ -486,7 +488,7 @@ argparse.sh::parse_args() {
         fi
 
         # Everything from the value flag rightwards has been consumed as the
-        # value, so what stands in front of it is booleans: "fr/^\d+/" -> "f".
+        # value, so what stands in front of it is booleans: "qp8080" -> "q".
         bundle=${bundle%%$value_flag*}
 
         if [[ $array_value_len -gt $optional_value_len ]]; then
@@ -507,8 +509,8 @@ argparse.sh::parse_args() {
         fi
       fi
 
-      # Whatever survives is booleans in any order: "f" above, or "qv" from
-      # `-cqvp8080'. Each match is deleted, which is what ends the loop.
+      # Whatever survives is booleans in any order: "q" above, or "qt" from
+      # `-vqtp8080'. Each match is deleted, which is what ends the loop.
       while [[ $bundle =~ ($short_flag_regex) ]]; do
         opt_flag=${BASH_REMATCH[1]}
         name_var=_ARG_${opt_flag}_NAME
