@@ -192,7 +192,7 @@ arg_positional() {
     pos_name=${BASH_REMATCH[1]}
     pos_desc=${BASH_REMATCH[4]}
   else
-    return 0
+    return 1
   fi
   POSITIONAL_NAMES[${#POSITIONAL_NAMES[@]}]=$pos_name
   POSITIONAL_DESCRIPTIONS[${#POSITIONAL_DESCRIPTIONS[@]}]=$pos_desc
@@ -228,7 +228,7 @@ long_flag_regex=
 short_flag_regex=
 arg_boolean() {
   local opt_name opt_flag opt_desc
-  argparse.sh::split_spec "$@" || return 0
+  argparse.sh::split_spec "$@" || return 1
   BOOLEAN_NAMES[${#BOOLEAN_NAMES[@]}]=$opt_name
   BOOLEAN_FLAGS[${#BOOLEAN_FLAGS[@]}]=$opt_flag
   BOOLEAN_DESCRIPTIONS[${#BOOLEAN_DESCRIPTIONS[@]}]=$opt_desc
@@ -245,7 +245,7 @@ long_opt_regex=
 short_opt_regex=
 arg_optional() {
   local opt_name opt_flag opt_desc
-  argparse.sh::split_spec "$@" || return 0
+  argparse.sh::split_spec "$@" || return 1
   OPTIONAL_NAMES[${#OPTIONAL_NAMES[@]}]=$opt_name
   OPTIONAL_FLAGS[${#OPTIONAL_FLAGS[@]}]=$opt_flag
   OPTIONAL_DESCRIPTIONS[${#OPTIONAL_DESCRIPTIONS[@]}]=$opt_desc
@@ -262,7 +262,7 @@ long_arr_regex=
 short_arr_regex=
 arg_array() {
   local opt_name opt_flag opt_desc
-  argparse.sh::split_spec "$@" || return 0
+  argparse.sh::split_spec "$@" || return 1
   ARRAY_NAMES[${#ARRAY_NAMES[@]}]=$opt_name
   ARRAY_FLAGS[${#ARRAY_FLAGS[@]}]=$opt_flag
   ARRAY_DESCRIPTIONS[${#ARRAY_DESCRIPTIONS[@]}]=$opt_desc
