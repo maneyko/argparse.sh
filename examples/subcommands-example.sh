@@ -11,7 +11,7 @@ parse_args
 
 build() {
   source "$(dirname "$0")/../argparse.sh" "$@"
-  arg_help     "[Build the project.]"
+  arg_help     build "Build the project."
   arg_optional "[target]  [t] [What to build. Default: all]"
   arg_boolean  "[release] [r] [Build with optimizations.]"
   parse_args
@@ -21,7 +21,7 @@ build() {
 
 clean() {
   source "$(dirname "$0")/../argparse.sh" "$@"
-  arg_help    "[Remove build output.]"
+  arg_help    clean "Remove build output."
   arg_boolean "[all] [a] [Also remove downloaded dependencies.]"
   parse_args
 

@@ -339,6 +339,21 @@ contains 'percent and format specifiers survive'        "$OUT" 'Percent 100% and
 contains 'multi-line description keeps its first line'  "$OUT" 'First line of the description'
 contains 'multi-line description keeps its later lines' "$OUT" 'Second line of the description'
 
+cat > "$FIXTURES/subhelp.sh" <<'FIXTURE'
+#!/bin/bash
+source "$ARGPARSE_SH"
+arg_boolean "[release] [r] [Release build]"
+arg_help    build "Build the project"
+parse_args
+FIXTURE
+
+run subhelp -h
+contains 'a subcommand in arg_help appears in usage'    "$OUT" 'subhelp.sh build [--release]'
+line_is  'its description is printed as given'          "$OUT" 'Build the project'
+
+run full -h
+contains 'a bracketed arg_help adds nothing to usage'   "$OUT" '  full.sh [infile] [outfile]'
+
 cat > "$FIXTURES/strict.sh" <<'FIXTURE'
 #!/bin/bash
 set -euo pipefail

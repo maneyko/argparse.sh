@@ -99,6 +99,8 @@
 # * arg_help
 #   - This is optional and will add the `-h' and `--help' flags as arguments to your script.
 #   - Usage example: arg_help "[My custom help message]"
+#   - In a subcommand, name it first so the usage line reads `myscript.sh build ...':
+#       arg_help build "Build the project"
 #   - CLI example: ./myscript.sh -h
 #     All the commands you registered with argparse.sh will be printed to the console in a smart way.
 #
@@ -167,6 +169,7 @@ _ap_array_flags=()
 _ap_array_descriptions=()
 
 _ap_help_description=
+_ap_help_subcommand=
 
 # Bold print.
 # @param text [String]
@@ -278,9 +281,13 @@ arg_array() {
   _ap_re_short_arr+="(${opt_flag:-$_ap_re_impossible_match})|"
 }
 
+# @param subcommand (optional)
 # @param arg_description
 arg_help() {
-  if [[ "$@" =~ $_ap_re_arg_help ]]; then
+  if [[ $# -gt 1 && $1 != *\[* ]]; then
+    _ap_help_subcommand=$1
+    _ap_help_description=$2
+  elif [[ "$@" =~ $_ap_re_arg_help ]]; then
     _ap_help_description=${BASH_REMATCH[2]}
   fi
   _ap_boolean_names[${#_ap_boolean_names[@]}]=help
@@ -654,7 +661,7 @@ print_help() {
   local wrap_column=$(($HELP_WIDTH - 3))   # indent for a description's later lines
   local opt_flag opt_name flag_disp out line i first_done p_name pos_name bool_name bool_flag
   bprint 'usage:'
-  out="  ${0##*/} "
+  out="  ${0##*/} ${_ap_help_subcommand:+$_ap_help_subcommand }"
   for p_name in "${_ap_positional_names[@]}"; do
     out+="[$p_name] "
   done

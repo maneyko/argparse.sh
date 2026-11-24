@@ -151,6 +151,8 @@ Functions for parsing arguments:
     - `arg_description`
 * `arg_help`
   * Arguments:
+    - `subcommand` (optional, separate-argument form only: `arg_help build "Build the project"`
+      prints `usage: tool.sh build ...`)
     - `arg_description`
 * `parse_args`
   * Arguments:
