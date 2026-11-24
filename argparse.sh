@@ -142,25 +142,25 @@ if [[ ${BASH_SOURCE[0]} == $0 ]]; then
   exit 1
 fi
 
-ARGS_ARR=("$@")
+_ap_args=("$@")
 
 POSITIONAL=()
-POSITIONAL_NAMES=()
-POSITIONAL_DESCRIPTIONS=()
+_ap_positional_names=()
+_ap_positional_descriptions=()
 
-BOOLEAN_NAMES=()
-BOOLEAN_FLAGS=()
-BOOLEAN_DESCRIPTIONS=()
+_ap_boolean_names=()
+_ap_boolean_flags=()
+_ap_boolean_descriptions=()
 
-OPTIONAL_NAMES=()
-OPTIONAL_FLAGS=()
-OPTIONAL_DESCRIPTIONS=()
+_ap_optional_names=()
+_ap_optional_flags=()
+_ap_optional_descriptions=()
 
-ARRAY_NAMES=()
-ARRAY_FLAGS=()
-ARRAY_DESCRIPTIONS=()
+_ap_array_names=()
+_ap_array_flags=()
+_ap_array_descriptions=()
 
-HELP_DESCRIPTION=
+_ap_help_description=
 
 # Bold print.
 # @param text [String]
@@ -171,15 +171,15 @@ bprint() { printf -- '%b' "\033[1m$1\033[0m"; }
 # @param number [Integer]
 # @param text   [String]
 cprint()   { printf -- '%b' "\033[38;5;$1m$2\033[0m"; }
-cprint_q() {  cprint_string="\033[38;5;$1m$2\033[0m"; }
+cprint_q() {  _ap_cprint_string="\033[38;5;$1m$2\033[0m"; }
 
-impossible_match_pat='$.^'
-optional_space_pat='([[:space:]]+)?'
-arg_name_pat='([0-9A-Za-z_-]{2,})'
-arg_flag_pat='([[:alnum:]]{1,2})'
-arg_help_pat='(\[(.*)\])'
-arg_positional_pat="\[${arg_name_pat}\]${optional_space_pat}${arg_help_pat}?"
-three_arg_pat="\[${arg_name_pat}?\]?${optional_space_pat}\[?${arg_flag_pat}?\]${optional_space_pat}${arg_help_pat}?"
+_ap_impossible_match_pat='$.^'
+_ap_optional_space_pat='([[:space:]]+)?'
+_ap_arg_name_pat='([0-9A-Za-z_-]{2,})'
+_ap_arg_flag_pat='([[:alnum:]]{1,2})'
+_ap_arg_help_pat='(\[(.*)\])'
+_ap_arg_positional_pat="\[${_ap_arg_name_pat}\]${_ap_optional_space_pat}${_ap_arg_help_pat}?"
+_ap_three_arg_pat="\[${_ap_arg_name_pat}?\]?${_ap_optional_space_pat}\[?${_ap_arg_flag_pat}?\]${_ap_optional_space_pat}${_ap_arg_help_pat}?"
 
 # @param arg_name
 # @param arg_description
@@ -188,14 +188,14 @@ arg_positional() {
   if [[ $# -gt 1 && $1 != *\[* ]]; then
     pos_name=$1
     pos_desc=$2
-  elif [[ "$@" =~ $arg_positional_pat ]]; then
+  elif [[ "$@" =~ $_ap_arg_positional_pat ]]; then
     pos_name=${BASH_REMATCH[1]}
     pos_desc=${BASH_REMATCH[4]}
   else
     return 1
   fi
-  POSITIONAL_NAMES[${#POSITIONAL_NAMES[@]}]=$pos_name
-  POSITIONAL_DESCRIPTIONS[${#POSITIONAL_DESCRIPTIONS[@]}]=$pos_desc
+  _ap_positional_names[${#_ap_positional_names[@]}]=$pos_name
+  _ap_positional_descriptions[${#_ap_positional_descriptions[@]}]=$pos_desc
 }
 
 # Sets $opt_name, $opt_flag and $opt_desc in the caller from either form,
@@ -215,7 +215,7 @@ argparse.sh::split_spec() {
     opt_desc=${3:-}
     return 0
   fi
-  [[ "$@" =~ $three_arg_pat ]] || return 1
+  [[ "$@" =~ $_ap_three_arg_pat ]] || return 1
   opt_name=${BASH_REMATCH[1]}
   opt_flag=${BASH_REMATCH[3]}
   opt_desc=${BASH_REMATCH[6]}
@@ -224,66 +224,66 @@ argparse.sh::split_spec() {
 # @param arg_name
 # @param arg_flag
 # @param arg_description
-long_flag_regex=
-short_flag_regex=
+_ap_re_long_flag=
+_ap_re_short_flag=
 arg_boolean() {
   local opt_name opt_flag opt_desc
   argparse.sh::split_spec "$@" || return 1
-  BOOLEAN_NAMES[${#BOOLEAN_NAMES[@]}]=$opt_name
-  BOOLEAN_FLAGS[${#BOOLEAN_FLAGS[@]}]=$opt_flag
-  BOOLEAN_DESCRIPTIONS[${#BOOLEAN_DESCRIPTIONS[@]}]=$opt_desc
+  _ap_boolean_names[${#_ap_boolean_names[@]}]=$opt_name
+  _ap_boolean_flags[${#_ap_boolean_flags[@]}]=$opt_flag
+  _ap_boolean_descriptions[${#_ap_boolean_descriptions[@]}]=$opt_desc
 
   export -n _ARG_${opt_flag:-${opt_name//-/_}}_NAME=${opt_name:-$opt_flag}
-  long_flag_regex+="(${opt_name:-$impossible_match_pat})|"
-  short_flag_regex+="(${opt_flag:-$impossible_match_pat})|"
+  _ap_re_long_flag+="(${opt_name:-$_ap_impossible_match_pat})|"
+  _ap_re_short_flag+="(${opt_flag:-$_ap_impossible_match_pat})|"
 }
 
 # @param arg_name
 # @param arg_flag
 # @param arg_description
-long_opt_regex=
-short_opt_regex=
+_ap_re_long_opt=
+_ap_re_short_opt=
 arg_optional() {
   local opt_name opt_flag opt_desc
   argparse.sh::split_spec "$@" || return 1
-  OPTIONAL_NAMES[${#OPTIONAL_NAMES[@]}]=$opt_name
-  OPTIONAL_FLAGS[${#OPTIONAL_FLAGS[@]}]=$opt_flag
-  OPTIONAL_DESCRIPTIONS[${#OPTIONAL_DESCRIPTIONS[@]}]=$opt_desc
+  _ap_optional_names[${#_ap_optional_names[@]}]=$opt_name
+  _ap_optional_flags[${#_ap_optional_flags[@]}]=$opt_flag
+  _ap_optional_descriptions[${#_ap_optional_descriptions[@]}]=$opt_desc
 
   export -n _ARG_${opt_flag:-${opt_name//-/_}}_NAME=${opt_name:-$opt_flag}
-  long_opt_regex+="(${opt_name:-$impossible_match_pat})|"
-  short_opt_regex+="(${opt_flag:-$impossible_match_pat})|"
+  _ap_re_long_opt+="(${opt_name:-$_ap_impossible_match_pat})|"
+  _ap_re_short_opt+="(${opt_flag:-$_ap_impossible_match_pat})|"
 }
 
 # @param arg_name
 # @param arg_flag
 # @param arg_description
-long_arr_regex=
-short_arr_regex=
+_ap_re_long_arr=
+_ap_re_short_arr=
 arg_array() {
   local opt_name opt_flag opt_desc
   argparse.sh::split_spec "$@" || return 1
-  ARRAY_NAMES[${#ARRAY_NAMES[@]}]=$opt_name
-  ARRAY_FLAGS[${#ARRAY_FLAGS[@]}]=$opt_flag
-  ARRAY_DESCRIPTIONS[${#ARRAY_DESCRIPTIONS[@]}]=$opt_desc
+  _ap_array_names[${#_ap_array_names[@]}]=$opt_name
+  _ap_array_flags[${#_ap_array_flags[@]}]=$opt_flag
+  _ap_array_descriptions[${#_ap_array_descriptions[@]}]=$opt_desc
 
   export -n _ARG_${opt_flag:-${opt_name//-/_}}_NAME=${opt_name:-$opt_flag}
-  long_arr_regex+="(${opt_name:-$impossible_match_pat})|"
-  short_arr_regex+="(${opt_flag:-$impossible_match_pat})|"
+  _ap_re_long_arr+="(${opt_name:-$_ap_impossible_match_pat})|"
+  _ap_re_short_arr+="(${opt_flag:-$_ap_impossible_match_pat})|"
 }
 
 # @param arg_description
 arg_help() {
-  if [[ "$@" =~ $arg_help_pat ]]; then
-    HELP_DESCRIPTION=${BASH_REMATCH[2]}
+  if [[ "$@" =~ $_ap_arg_help_pat ]]; then
+    _ap_help_description=${BASH_REMATCH[2]}
   fi
-  BOOLEAN_NAMES[${#BOOLEAN_NAMES[@]}]=help
-  BOOLEAN_FLAGS[${#BOOLEAN_FLAGS[@]}]=h
-  BOOLEAN_DESCRIPTIONS[${#BOOLEAN_DESCRIPTIONS[@]}]='Print this help message.'
+  _ap_boolean_names[${#_ap_boolean_names[@]}]=help
+  _ap_boolean_flags[${#_ap_boolean_flags[@]}]=h
+  _ap_boolean_descriptions[${#_ap_boolean_descriptions[@]}]='Print this help message.'
 
   export -n _ARG_h_NAME=help
-  long_flag_regex+='(help)|'
-  short_flag_regex+='(h)|'
+  _ap_re_long_flag+='(help)|'
+  _ap_re_short_flag+='(h)|'
 }
 
 if [[ ${BASH_VERSINFO[0]} -ge 4 ]]; then
@@ -349,7 +349,7 @@ parse_args() {
     set +u
   fi
 
-  argparse.sh::parse_args "${ARGS_ARR[@]}"
+  argparse.sh::parse_args "${_ap_args[@]}"
   get__dir__
   __FILE__=$__DIR__/${0##*/}
 
@@ -379,18 +379,18 @@ argparse.sh::parse_args() {
   # where nothing was registered substitute a pattern that cannot match, so
   # the branch below is simply never taken -- an empty regex would match
   # everything instead.
-  long_flag_regex=${long_flag_regex%|}
-  : ${long_flag_regex:=($impossible_match_pat)}
-  short_flag_regex=${short_flag_regex%|}
-  : ${short_flag_regex:=($impossible_match_pat)}
-  long_opt_regex=${long_opt_regex%|}
-  : ${long_opt_regex:=($impossible_match_pat)}
-  short_opt_regex=${short_opt_regex%|}
-  : ${short_opt_regex:=($impossible_match_pat)}
-  long_arr_regex=${long_arr_regex%|}
-  : ${long_arr_regex:=($impossible_match_pat)}
-  short_arr_regex=${short_arr_regex%|}
-  : ${short_arr_regex:=($impossible_match_pat)}
+  _ap_re_long_flag=${_ap_re_long_flag%|}
+  : ${_ap_re_long_flag:=($_ap_impossible_match_pat)}
+  _ap_re_short_flag=${_ap_re_short_flag%|}
+  : ${_ap_re_short_flag:=($_ap_impossible_match_pat)}
+  _ap_re_long_opt=${_ap_re_long_opt%|}
+  : ${_ap_re_long_opt:=($_ap_impossible_match_pat)}
+  _ap_re_short_opt=${_ap_re_short_opt%|}
+  : ${_ap_re_short_opt:=($_ap_impossible_match_pat)}
+  _ap_re_long_arr=${_ap_re_long_arr%|}
+  : ${_ap_re_long_arr:=($_ap_impossible_match_pat)}
+  _ap_re_short_arr=${_ap_re_short_arr%|}
+  : ${_ap_re_short_arr:=($_ap_impossible_match_pat)}
 
   # $name_var and $found_var hold the *names* of variables, read back with
   # ${!name_var}. $name_upper is set by `get_name_upper' rather than returned.
@@ -409,13 +409,13 @@ argparse.sh::parse_args() {
     value=
     shift
 
-    if [[ $key =~ ^--($long_flag_regex)$ ]]; then
+    if [[ $key =~ ^--($_ap_re_long_flag)$ ]]; then
       # `--verbose'. Anchored at both ends: a boolean takes no value, so
       # `--verbose=false' does not match here and ends up in $POSITIONAL.
       get_name_upper ${BASH_REMATCH[1]}
       export -n ARG_$name_upper=true
 
-    elif [[ $key =~ ^-($short_flag_regex) ]]; then
+    elif [[ $key =~ ^-($_ap_re_short_flag) ]]; then
       # A short boolean flag, with anything bundled behind it still attached:
       # `-v', `-vq', `-vp8080' and `-vqp8080' all arrive here.
       opt_flag=${BASH_REMATCH[1]}          # "v"
@@ -451,7 +451,7 @@ argparse.sh::parse_args() {
 
       # The pattern ends in `(.*)', so the last capture group is the text
       # following the matched flag: for "qp8080" that is "8080".
-      if [[ $bundle =~ ($short_opt_regex)(.*) ]]; then
+      if [[ $bundle =~ ($_ap_re_short_opt)(.*) ]]; then
         optional_value=${BASH_REMATCH[@]: -1}
         optional_value_len=${#optional_value}
         optional_flag=${BASH_REMATCH[1]}
@@ -459,7 +459,7 @@ argparse.sh::parse_args() {
         optional_name=${!name_var}         # e.g. "port"
       fi
 
-      if [[ $bundle =~ ($short_arr_regex)(.*) ]]; then
+      if [[ $bundle =~ ($_ap_re_short_arr)(.*) ]]; then
         array_value=${BASH_REMATCH[@]: -1}
         array_value_len=${#array_value}
         array_flag=${BASH_REMATCH[1]}
@@ -512,7 +512,7 @@ argparse.sh::parse_args() {
 
       # Whatever survives is booleans in any order: "q" above, or "qt" from
       # `-vqtp8080'. Each match is deleted, which is what ends the loop.
-      while [[ $bundle =~ ($short_flag_regex) ]]; do
+      while [[ $bundle =~ ($_ap_re_short_flag) ]]; do
         opt_flag=${BASH_REMATCH[1]}
         name_var=_ARG_${opt_flag}_NAME
         get_name_upper ${!name_var}
@@ -521,7 +521,7 @@ argparse.sh::parse_args() {
       done
       # </Bundled arguments>
 
-    elif [[ $key =~ ^--($long_opt_regex) ]]; then
+    elif [[ $key =~ ^--($_ap_re_long_opt) ]]; then
       # `--port 8080' or `--port=8080'.
       opt_name=${BASH_REMATCH[1]}          # "port"
       get_name_upper $opt_name             # name_upper="PORT"
@@ -540,7 +540,7 @@ argparse.sh::parse_args() {
 
       export -n ARG_$name_upper="$value"
 
-    elif [[ $key =~ ^-($short_opt_regex) ]]; then
+    elif [[ $key =~ ^-($_ap_re_short_opt) ]]; then
       # `-p 8080' or `-p8080'. Bundles were handled by the boolean branch
       # above, so anything attached here is the value.
       opt_flag=${BASH_REMATCH[1]}
@@ -555,7 +555,7 @@ argparse.sh::parse_args() {
       fi
       export -n ARG_$name_upper="$value"
 
-    elif [[ $key =~ ^--($long_arr_regex) ]]; then
+    elif [[ $key =~ ^--($_ap_re_long_arr) ]]; then
       # `--numbers 12' or `--numbers=12', repeatable.
       opt_name=${BASH_REMATCH[1]}
       if [[ $key == --$opt_name ]]; then
@@ -578,7 +578,7 @@ argparse.sh::parse_args() {
       fi
       eval "ARG_$name_upper[\${#ARG_$name_upper[@]}]=\$value"
 
-    elif [[ $key =~ ^-($short_arr_regex) ]]; then
+    elif [[ $key =~ ^-($_ap_re_short_arr) ]]; then
       # `-n 12' or `-n12', repeatable.
       opt_flag=${BASH_REMATCH[1]}
       name_var=_ARG_${opt_flag}_NAME
@@ -615,12 +615,12 @@ argparse.sh::parse_args() {
   # so the first value becomes $ARG_<first registered name>. Extra values stay
   # in $POSITIONAL and are not given a name.
   i=0; for pos_val in "${POSITIONAL[@]}"; do
-    get_name_upper ${POSITIONAL_NAMES[$i]}
+    get_name_upper ${_ap_positional_names[$i]}
     export -n ARG_$name_upper="$pos_val"
     : $((i++))
   done
 
-  unset ${!_ARG_*} ${!_found_*}
+  unset ${!_ARG_*} ${!_found_*} ${!_ap_re_*}
 }
 
 print_help() {
@@ -644,20 +644,20 @@ print_help() {
   local opt_flag opt_name flag_disp out line i first_done p_name pos_name bool_name bool_flag
   bprint 'usage:'
   out="  ${0##*/} "
-  for p_name in "${POSITIONAL_NAMES[@]}"; do
+  for p_name in "${_ap_positional_names[@]}"; do
     out+="[$p_name] "
   done
-  i=0; for bool_name in "${BOOLEAN_NAMES[@]}"; do
+  i=0; for bool_name in "${_ap_boolean_names[@]}"; do
     if [[ -n $bool_name ]]; then
       out+="[--$bool_name] "
     else
-      out+="[-${BOOLEAN_FLAGS[$i]}] "
+      out+="[-${_ap_boolean_flags[$i]}] "
     fi
     : $((i++))
   done
-  i=0; for opt_name in "${OPTIONAL_NAMES[@]}"; do
+  i=0; for opt_name in "${_ap_optional_names[@]}"; do
     : ${opt_name:=STRING}
-    opt_flag=${OPTIONAL_FLAGS[$i]}
+    opt_flag=${_ap_optional_flags[$i]}
     if [[ -n $opt_flag ]]; then
       out+="[-$opt_flag $opt_name] "
     else
@@ -665,8 +665,8 @@ print_help() {
     fi
     : $((i++))
   done
-  i=0; for opt_flag in "${ARRAY_FLAGS[@]}"; do
-    opt_name="${ARRAY_NAMES[$i]}"
+  i=0; for opt_flag in "${_ap_array_flags[@]}"; do
+    opt_name="${_ap_array_names[$i]}"
     : ${opt_name:=STRING}
     if [[ -n $opt_flag ]]; then
       out+="[-$opt_flag $opt_name -$opt_flag ...] "
@@ -676,45 +676,45 @@ print_help() {
     : $((i++))
   done
   if [[
-    ${#BOOLEAN_FLAGS[@]}  -gt 0 ||
-    ${#OPTIONAL_FLAGS[@]} -gt 0 ||
-    ${#ARRAY_FLAGS[@]}    -gt 0
+    ${#_ap_boolean_flags[@]}  -gt 0 ||
+    ${#_ap_optional_flags[@]} -gt 0 ||
+    ${#_ap_array_flags[@]}    -gt 0
   ]]; then
     has_any_optional_flags=true
   else
     unset has_any_optional_flags
   fi
-  printf -- "%s\n%b\n" "$out" "$HELP_DESCRIPTION"
+  printf -- "%s\n%b\n" "$out" "$_ap_help_description"
   out=
-  [[ -n $has_any_optional_flags || ${#POSITIONAL_NAMES[@]} -gt 0 ]] && out+=$'\n'
-  [[ ${#POSITIONAL_NAMES[@]} -gt 0 ]]                               && out+=$'positional arguments:\n'
+  [[ -n $has_any_optional_flags || ${#_ap_positional_names[@]} -gt 0 ]] && out+=$'\n'
+  [[ ${#_ap_positional_names[@]} -gt 0 ]]                               && out+=$'positional arguments:\n'
   # A description may span several lines. The first one is printed beside the
   # argument's name; the rest are indented under it. The three blocks below --
   # positional, boolean and optional, then array -- all repeat this shape.
-  i=0; for pos_name in "${POSITIONAL_NAMES[@]}"; do
+  i=0; for pos_name in "${_ap_positional_names[@]}"; do
     cprint_q 3 "$pos_name"
     first_done=
     while read -r; do
       if [[ -z $first_done ]]; then
         first_done=1
-        printf -v line -- "  %-${pos_column}b %s\n" "${cprint_string}" "$REPLY"
+        printf -v line -- "  %-${pos_column}b %s\n" "${_ap_cprint_string}" "$REPLY"
       else
         printf -v line -- "  %-${wrap_column}s %s\n" ' ' "$REPLY"
       fi
       out+=$line
-    done <<< "${POSITIONAL_DESCRIPTIONS[$i]}"
+    done <<< "${_ap_positional_descriptions[$i]}"
     : $((i++))
   done
-  [[ ${#POSITIONAL_NAMES[@]} -gt 0 ]] && out+=$'\n'
+  [[ ${#_ap_positional_names[@]} -gt 0 ]] && out+=$'\n'
   [[ -n $has_any_optional_flags ]]    && out+=$'optional arguments:\n'
-  i=0; for bool_name in "${BOOLEAN_NAMES[@]}"; do
-    bool_flag=${BOOLEAN_FLAGS[$i]}
+  i=0; for bool_name in "${_ap_boolean_names[@]}"; do
+    bool_flag=${_ap_boolean_flags[$i]}
     if [[ -n $bool_flag ]]; then
       cprint_q 3 "-$bool_flag"
-      flag_disp=$cprint_string
+      flag_disp=$_ap_cprint_string
     else
       cprint_q 3 "  "
-      flag_disp="$cprint_string "
+      flag_disp="$_ap_cprint_string "
     fi
     if [[ -n $bool_name ]]; then
       cprint_q 3 "--$bool_name"
@@ -728,23 +728,23 @@ print_help() {
     while read -r; do
       if [[ -z $first_done ]]; then
         first_done=1
-        printf -v line -- "  %-${flag_column}b %s\n" "$flag_disp $cprint_string" "$REPLY"
+        printf -v line -- "  %-${flag_column}b %s\n" "$flag_disp $_ap_cprint_string" "$REPLY"
       else
         printf -v line -- "  %-${wrap_column}s %s\n" ' ' "$REPLY"
       fi
       out+=$line
-    done <<< "${BOOLEAN_DESCRIPTIONS[$i]}"
+    done <<< "${_ap_boolean_descriptions[$i]}"
     : $((i++))
   done
-  i=0; for opt_name in "${OPTIONAL_NAMES[@]}"; do
-    opt_flag=${OPTIONAL_FLAGS[$i]}
+  i=0; for opt_name in "${_ap_optional_names[@]}"; do
+    opt_flag=${_ap_optional_flags[$i]}
 
     if [[ -n $opt_flag ]]; then
       cprint_q 3 "-$opt_flag"
-      flag_disp=$cprint_string
+      flag_disp=$_ap_cprint_string
     else
       cprint_q 3 "  "
-      flag_disp="$cprint_string "
+      flag_disp="$_ap_cprint_string "
     fi
     if [[ -n $opt_name ]]; then
       cprint_q 3 "--$opt_name"
@@ -758,22 +758,22 @@ print_help() {
     while read -r; do
       if [[ -z $first_done ]]; then
         first_done=1
-        printf -v line -- "  %-${flag_column}b %s\n" "$flag_disp $cprint_string" "$REPLY"
+        printf -v line -- "  %-${flag_column}b %s\n" "$flag_disp $_ap_cprint_string" "$REPLY"
       else
         printf -v line -- "  %-${wrap_column}s %s\n" ' ' "$REPLY"
       fi
       out+=$line
-    done <<< "${OPTIONAL_DESCRIPTIONS[$i]}"
+    done <<< "${_ap_optional_descriptions[$i]}"
     : $((i++))
   done
-  i=0; for opt_name in "${ARRAY_NAMES[@]}"; do
-    opt_flag=${ARRAY_FLAGS[$i]}
+  i=0; for opt_name in "${_ap_array_names[@]}"; do
+    opt_flag=${_ap_array_flags[$i]}
     if [[ -n $opt_flag ]]; then
       cprint_q 3 "-$opt_flag"
-      flag_disp=$cprint_string
+      flag_disp=$_ap_cprint_string
     else
       cprint_q 3 "  "
-      flag_disp="$cprint_string "
+      flag_disp="$_ap_cprint_string "
     fi
     if [[ -n $opt_name ]]; then
       cprint_q 3 "--$opt_name"
@@ -787,12 +787,12 @@ print_help() {
     while read -r; do
       if [[ -z $first_done ]]; then
         first_done=1
-        printf -v line -- "  %-${flag_column}b %s\n" "$flag_disp $cprint_string" "$REPLY"
+        printf -v line -- "  %-${flag_column}b %s\n" "$flag_disp $_ap_cprint_string" "$REPLY"
       else
         printf -v line -- "  %-${wrap_column}s %s\n" ' ' "$REPLY"
       fi
       out+=$line
-    done <<< "${ARRAY_DESCRIPTIONS[$i]}"
+    done <<< "${_ap_array_descriptions[$i]}"
     : $((i++))
   done
   printf -- '%s' "$out"
