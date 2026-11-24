@@ -98,6 +98,9 @@ as is done in [Usage](#usage).
 
 * Passing invalid arguments to the user script results in unexpected behavior from `argparse.sh`.
 
+* `argparse.sh` keeps its own state in variables prefixed `_ap_`. Do not use that prefix in
+  your script.
+
 ## Requirements
 
 [Bash](https://en.wikipedia.org/wiki/Bash_(Unix_shell)) >= 3.0
@@ -121,6 +124,9 @@ arg_optional percentage ""   "Percent of file to process"
 
 Both spellings may be mixed within one script. The bracket form is used throughout this
 document and is not going away.
+
+Each `arg_` function returns 1, registering nothing, when its fields do not parse. Under
+`set -e` that stops the script at the bad line.
 
 Functions for parsing arguments:
 
@@ -168,3 +174,7 @@ Additional helper functions and variables:
 * `cprint`
   - Function to print the text as [8-bit color](https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit),
     without a trailing newline
+
+## License
+
+[MIT](LICENSE)
