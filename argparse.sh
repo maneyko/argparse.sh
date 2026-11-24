@@ -173,13 +173,13 @@ bprint() { printf -- '%b' "\033[1m$1\033[0m"; }
 cprint()   { printf -- '%b' "\033[38;5;$1m$2\033[0m"; }
 cprint_q() {  _ap_cprint_string="\033[38;5;$1m$2\033[0m"; }
 
-_ap_impossible_match_pat='$.^'
-_ap_optional_space_pat='([[:space:]]+)?'
-_ap_arg_name_pat='([0-9A-Za-z_-]{2,})'
-_ap_arg_flag_pat='([[:alnum:]]{1,2})'
-_ap_arg_help_pat='(\[(.*)\])'
-_ap_arg_positional_pat="\[${_ap_arg_name_pat}\]${_ap_optional_space_pat}${_ap_arg_help_pat}?"
-_ap_three_arg_pat="\[${_ap_arg_name_pat}?\]?${_ap_optional_space_pat}\[?${_ap_arg_flag_pat}?\]${_ap_optional_space_pat}${_ap_arg_help_pat}?"
+_ap_re_impossible_match='$.^'
+_ap_re_optional_space='([[:space:]]+)?'
+_ap_re_arg_name='([0-9A-Za-z_-]{2,})'
+_ap_re_arg_flag='([[:alnum:]]{1,2})'
+_ap_re_arg_help='(\[(.*)\])'
+_ap_re_arg_positional="\[${_ap_re_arg_name}\]${_ap_re_optional_space}${_ap_re_arg_help}?"
+_ap_re_three_arg="\[${_ap_re_arg_name}?\]?${_ap_re_optional_space}\[?${_ap_re_arg_flag}?\]${_ap_re_optional_space}${_ap_re_arg_help}?"
 
 # @param arg_name
 # @param arg_description
@@ -188,7 +188,7 @@ arg_positional() {
   if [[ $# -gt 1 && $1 != *\[* ]]; then
     pos_name=$1
     pos_desc=$2
-  elif [[ "$@" =~ $_ap_arg_positional_pat ]]; then
+  elif [[ "$@" =~ $_ap_re_arg_positional ]]; then
     pos_name=${BASH_REMATCH[1]}
     pos_desc=${BASH_REMATCH[4]}
   else
@@ -215,7 +215,7 @@ argparse.sh::split_spec() {
     opt_desc=${3:-}
     return 0
   fi
-  [[ "$@" =~ $_ap_three_arg_pat ]] || return 1
+  [[ "$@" =~ $_ap_re_three_arg ]] || return 1
   opt_name=${BASH_REMATCH[1]}
   opt_flag=${BASH_REMATCH[3]}
   opt_desc=${BASH_REMATCH[6]}
@@ -234,8 +234,8 @@ arg_boolean() {
   _ap_boolean_descriptions[${#_ap_boolean_descriptions[@]}]=$opt_desc
 
   export -n _ARG_${opt_flag:-${opt_name//-/_}}_NAME=${opt_name:-$opt_flag}
-  _ap_re_long_flag+="(${opt_name:-$_ap_impossible_match_pat})|"
-  _ap_re_short_flag+="(${opt_flag:-$_ap_impossible_match_pat})|"
+  _ap_re_long_flag+="(${opt_name:-$_ap_re_impossible_match})|"
+  _ap_re_short_flag+="(${opt_flag:-$_ap_re_impossible_match})|"
 }
 
 # @param arg_name
@@ -251,8 +251,8 @@ arg_optional() {
   _ap_optional_descriptions[${#_ap_optional_descriptions[@]}]=$opt_desc
 
   export -n _ARG_${opt_flag:-${opt_name//-/_}}_NAME=${opt_name:-$opt_flag}
-  _ap_re_long_opt+="(${opt_name:-$_ap_impossible_match_pat})|"
-  _ap_re_short_opt+="(${opt_flag:-$_ap_impossible_match_pat})|"
+  _ap_re_long_opt+="(${opt_name:-$_ap_re_impossible_match})|"
+  _ap_re_short_opt+="(${opt_flag:-$_ap_re_impossible_match})|"
 }
 
 # @param arg_name
@@ -268,13 +268,13 @@ arg_array() {
   _ap_array_descriptions[${#_ap_array_descriptions[@]}]=$opt_desc
 
   export -n _ARG_${opt_flag:-${opt_name//-/_}}_NAME=${opt_name:-$opt_flag}
-  _ap_re_long_arr+="(${opt_name:-$_ap_impossible_match_pat})|"
-  _ap_re_short_arr+="(${opt_flag:-$_ap_impossible_match_pat})|"
+  _ap_re_long_arr+="(${opt_name:-$_ap_re_impossible_match})|"
+  _ap_re_short_arr+="(${opt_flag:-$_ap_re_impossible_match})|"
 }
 
 # @param arg_description
 arg_help() {
-  if [[ "$@" =~ $_ap_arg_help_pat ]]; then
+  if [[ "$@" =~ $_ap_re_arg_help ]]; then
     _ap_help_description=${BASH_REMATCH[2]}
   fi
   _ap_boolean_names[${#_ap_boolean_names[@]}]=help
@@ -380,17 +380,17 @@ argparse.sh::parse_args() {
   # the branch below is simply never taken -- an empty regex would match
   # everything instead.
   _ap_re_long_flag=${_ap_re_long_flag%|}
-  : ${_ap_re_long_flag:=($_ap_impossible_match_pat)}
+  : ${_ap_re_long_flag:=($_ap_re_impossible_match)}
   _ap_re_short_flag=${_ap_re_short_flag%|}
-  : ${_ap_re_short_flag:=($_ap_impossible_match_pat)}
+  : ${_ap_re_short_flag:=($_ap_re_impossible_match)}
   _ap_re_long_opt=${_ap_re_long_opt%|}
-  : ${_ap_re_long_opt:=($_ap_impossible_match_pat)}
+  : ${_ap_re_long_opt:=($_ap_re_impossible_match)}
   _ap_re_short_opt=${_ap_re_short_opt%|}
-  : ${_ap_re_short_opt:=($_ap_impossible_match_pat)}
+  : ${_ap_re_short_opt:=($_ap_re_impossible_match)}
   _ap_re_long_arr=${_ap_re_long_arr%|}
-  : ${_ap_re_long_arr:=($_ap_impossible_match_pat)}
+  : ${_ap_re_long_arr:=($_ap_re_impossible_match)}
   _ap_re_short_arr=${_ap_re_short_arr%|}
-  : ${_ap_re_short_arr:=($_ap_impossible_match_pat)}
+  : ${_ap_re_short_arr:=($_ap_re_impossible_match)}
 
   # $name_var and $found_var hold the *names* of variables, read back with
   # ${!name_var}. $name_upper is set by `get_name_upper' rather than returned.
