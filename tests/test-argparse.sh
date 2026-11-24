@@ -106,7 +106,8 @@ printf 'DELIM=[%s]\n'   "$ARG_DELIM"
 printf 'PERCENT=[%s]\n' "$ARG_PERCENT"
 printf 'NUMBERS=[%s]\n' "${ARG_NUMBERS[*]}"
 printf 'POSITIONAL=[%s] COUNT=[%s]\n' "${POSITIONAL[*]}" "${#POSITIONAL[@]}"
-printf 'LEAK=[%s%s]\n' "${!_ARG_*}" "${!_found_*}"
+printf 'LEAK=[%s%s%s]\n' "${!_ARG_*}" "${!_found_*}" "${!_ap_re_*}"
+printf 'UNNAMED=[%s]\n' "${ARG_-unset}"
 printf 'DIR_OK=[%s]\n' "$([[ -d $__DIR__ && -f $__FILE__ ]] && echo yes || echo no)"
 FIXTURE
 
@@ -117,8 +118,13 @@ line_is 'positional: also collected in POSITIONAL'      "$OUT" 'POSITIONAL=[in.t
 line_is 'unused boolean stays empty'                    "$OUT" 'VERBOSE=[]'
 line_is 'unused optional stays empty'                   "$OUT" 'PORT=[]'
 line_is 'array keeps its default when the flag is absent' "$OUT" 'NUMBERS=[9 9]'
-line_is 'no _ARG_/_found_ variables survive parse_args' "$OUT" 'LEAK=[]'
+line_is 'no _ARG_/_found_/_ap_re_ variables survive parse_args' "$OUT" 'LEAK=[]'
 line_is '__DIR__ and __FILE__ point at real paths'      "$OUT" 'DIR_OK=[yes]'
+
+run full in.txt out.txt extra
+line_is 'positional: an extra value fills no name'      "$OUT" 'OUTFILE=[out.txt]'
+line_is 'positional: an extra value sets no $ARG_'      "$OUT" 'UNNAMED=[unset]'
+line_is 'positional: an extra value stays in POSITIONAL' "$OUT" 'POSITIONAL=[in.txt out.txt extra] COUNT=[3]'
 
 run full --verbose
 line_is 'boolean: long form'                            "$OUT" 'VERBOSE=[true]'

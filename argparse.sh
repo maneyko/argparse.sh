@@ -615,6 +615,7 @@ argparse.sh::parse_args() {
   # so the first value becomes $ARG_<first registered name>. Extra values stay
   # in $POSITIONAL and are not given a name.
   i=0; for pos_val in "${POSITIONAL[@]}"; do
+    [[ $i -lt ${#_ap_positional_names[@]} ]] || break
     get_name_upper ${_ap_positional_names[$i]}
     export -n ARG_$name_upper="$pos_val"
     : $((i++))
