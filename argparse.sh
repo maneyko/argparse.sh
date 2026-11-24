@@ -117,7 +117,8 @@
 #   - Full (expanded) path of the script location. Does not resolve symlinks.
 #
 # * `${POSITIONAL[@]}'
-#   - Array of positional arguments (including those not parsed by argparse.sh)
+#   - Array of every argument that is not a registered flag, in command-line order. This includes
+#     the values assigned to `arg_positional' arguments, which are taken from the front of it.
 #
 # * bprint
 #   - Print the text as bold, without a trailing newline

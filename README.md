@@ -159,7 +159,8 @@ Additional helper functions and variables:
 * `$__FILE__`
   - Full path of the script.
 * `${POSITIONAL[@]}`
-  - Array of additional positional arguments not parsed by argparse.sh
+  - Array of every argument that is not a registered flag, in command-line order. This includes
+    the values assigned to `arg_positional` arguments, which are taken from the front of it.
 * `print_help`
   - Function to print the help page, automatically done if `-h` flag is present
 * `bprint`
