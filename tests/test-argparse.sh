@@ -278,6 +278,32 @@ line_is 'an unregistered bundle is forwarded intact'    "$OUT" 'FORWARDED=[-zxvf
 run passthrough backup.tar.gz --exclude 'build output'
 line_is 'a forwarded value keeps its spaces'            "$OUT" 'FORWARDED=[--exclude build output] COUNT=[2]'
 
+cat > "$FIXTURES/subcommand.sh" <<'FIXTURE'
+#!/bin/bash
+source "$ARGPARSE_SH"
+STOP_AT_POSITIONAL=true
+arg_positional "[command] [Subcommand to run]"
+arg_boolean    "[verbose] [v] [Verbose]"
+arg_optional   "[config]  [c] [Config file]"
+arg_help       "[Fixture for STOP_AT_POSITIONAL]"
+parse_args
+printf 'COMMAND=[%s] VERBOSE=[%s] CONFIG=[%s]\n' "$ARG_COMMAND" "$ARG_VERBOSE" "$ARG_CONFIG"
+printf 'POSITIONAL=[%s] COUNT=[%s]\n' "${POSITIONAL[*]}" "${#POSITIONAL[@]}"
+FIXTURE
+
+run subcommand -v -c top.cfg build -v -c rel.cfg
+line_is 'stop mode: flags before the command are parsed' "$OUT" 'COMMAND=[build] VERBOSE=[true] CONFIG=[top.cfg]'
+line_is 'stop mode: everything after it is left alone'   "$OUT" 'POSITIONAL=[build -v -c rel.cfg] COUNT=[4]'
+
+run subcommand build -h
+line_is 'stop mode: -h after the command is not help'    "$OUT" 'POSITIONAL=[build -h] COUNT=[2]'
+
+run subcommand -c 'a b' build --target 'x y'
+line_is 'stop mode: forwarded values keep their spaces'  "$OUT" 'POSITIONAL=[build --target x y] COUNT=[3]'
+
+run subcommand -v
+line_is 'stop mode: no command leaves POSITIONAL empty'  "$OUT" 'POSITIONAL=[] COUNT=[0]'
+
 cat > "$FIXTURES/twochar.sh" <<'FIXTURE'
 #!/bin/bash
 source "$ARGPARSE_SH"

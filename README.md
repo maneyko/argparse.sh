@@ -158,6 +158,13 @@ Functions for parsing arguments:
 
 Set `HELP_WIDTH` (before calling `parse_args`) to set the column width of the help message.
 
+Set `STOP_AT_POSITIONAL` to any value (before calling `parse_args`) to stop parsing at the first
+argument that is not a registered flag. That argument and everything after it go to
+`${POSITIONAL[@]}` untouched, which is what a script that dispatches to subcommands needs: with it
+set, `./tool.sh -v build -v` sets `$ARG_VERBOSE` from the first `-v` and leaves `build -v` for the
+subcommand. See
+[subcommands-example.sh](https://github.com/maneyko/argparse.sh/blob/master/examples/subcommands-example.sh).
+
 Additional helper functions and variables:
 
 * `$__DIR__`

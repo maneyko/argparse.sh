@@ -130,6 +130,12 @@
 #
 # * print_help
 #   - Function to print the help page, automatically done if `-h' flag is present
+#
+# * `$STOP_AT_POSITIONAL'
+#   - Set it (to any value) before calling `parse_args' to stop parsing at the first argument that
+#     is not a registered flag. That argument and everything after it go to `$POSITIONAL' as they
+#     are, so `./myscript.sh -v build -v' sets `$ARG_VERBOSE' once and leaves `build -v' for a
+#     subcommand.
 
 
 if [[ ${BASH_VERSINFO[0]} -le 2 ]]; then
@@ -603,6 +609,10 @@ argparse.sh::parse_args() {
       # flags meant for a command this script wraps -- several callers slice
       # their own positionals off the front and forward the rest verbatim.
       POSITIONAL[${#POSITIONAL[@]}]=$key
+      if [[ -n $STOP_AT_POSITIONAL ]]; then
+        POSITIONAL+=("$@")
+        break
+      fi
     fi
   done
 
